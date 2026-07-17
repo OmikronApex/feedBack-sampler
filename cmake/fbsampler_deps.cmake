@@ -14,9 +14,16 @@ set(SFIZZ_DEMOS OFF CACHE BOOL "" FORCE)
 set(SFIZZ_DEVTOOLS OFF CACHE BOOL "" FORCE)
 set(SFIZZ_BENCHMARKS OFF CACHE BOOL "" FORCE)
 set(SFIZZ_TESTS OFF CACHE BOOL "" FORCE)
+# Local patches on top of 1.2.3 (see cmake/patches/sfizz-1.2.3-fixes.patch):
+#   - SfizzConfig.cmake: don't apply ARM32 -mfpu/-mfloat-abi flags on arm64/aarch64 (macOS CI)
+#   - Voice.cpp: replace 0x1.fffffep-1 hexfloat literal (rejected by newer GCC) with 0.99999994f
 FetchContent_Declare(sfizz
     GIT_REPOSITORY https://github.com/sfztools/sfizz.git
     GIT_TAG 4e70dc0bef53b41f2853ed46e26f5911114c92d0 # 1.2.3
+    PATCH_COMMAND ${CMAKE_COMMAND}
+        -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/patches/sfizz-1.2.3-fixes.patch
+        -P ${CMAKE_CURRENT_LIST_DIR}/patches/apply_patch.cmake
+    UPDATE_DISCONNECTED ON
 )
 
 # --- JUCE 8.0.14 (tag 8.0.14) ---
