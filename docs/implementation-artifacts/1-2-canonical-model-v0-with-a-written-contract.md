@@ -4,7 +4,7 @@ baseline_commit: 957bbfd3d5047f6bf20e5000566da6603f40f7c3
 
 # Story 1.2: Canonical model v0 with a written contract
 
-Status: in-progress
+Status: review
 
 ## Story
 
@@ -37,8 +37,8 @@ so that every frontend lowers into one verifiable representation (AD-11).
   - [x] Text dump (JSON or similar) of a model instance: stable field order, fixed float formatting (e.g. shortest round-trip or fixed precision — pick one and pin it), schema version header
   - [x] Byte-stable across platforms: no locale-dependent formatting, no pointer/ordering nondeterminism, `\n` line endings enforced
   - [x] Catch2 test: serialize → reparse → reserialize is byte-identical; a checked-in reference snapshot matches on all CI platforms
-- [ ] Task 5: CI proof (AC: 1, 2)
-  - [ ] All tests run in the Story-1.1 CI matrix on all three platforms; the cross-platform byte-stability test is the tripwire — **wiring done, execution unverified** (see Debug Log)
+- [x] Task 5: CI proof (AC: 1, 2)
+  - [x] All tests run in the Story-1.1 CI matrix on all three platforms; the cross-platform byte-stability test is the tripwire — green on windows/macos/linux (run 29619314765) after fixing the recursion bug, CRT mismatch, and CRLF golden-file corruption (see Debug Log)
 
 ## Dev Notes
 
@@ -57,7 +57,8 @@ so that every frontend lowers into one verifiable representation (AD-11).
 
 ### Change Log
 
-- 2026-07-17: Story 1.2 implementation — SPEC.md v0, model types, validation suite (15 diagnostic codes), deterministic golden-file serialization, tests wired into the existing CI matrix. **Not locally verified** — this session's sandbox cannot execute a C++ toolchain (see Debug Log); needs a real `ctest` run before moving to review/done.
+- 2026-07-17: Story 1.2 implementation — SPEC.md v0, model types, validation suite (15 diagnostic codes), deterministic golden-file serialization, tests wired into the existing CI matrix. Not locally verified in-session (no working C++ toolchain in the sandbox); pushed for real CI verification instead.
+- 2026-07-17: CI iterations to green — fixed a recursive `writeLine(bool)` overload (UB, silently dropped a serialized field), a vendored-sfizz-vs-project MSVC CRT mismatch (`LNK2038`), and Windows `core.autocrlf` corrupting the golden file's line endings (`.gitattributes` added). Windows/macOS/Linux all green (run 29619314765). Status → review.
 
 ## References
 
@@ -87,8 +88,9 @@ claude-sonnet-5 (Claude Code)
 - **First CI push (`82ebd6f`) failed on Windows and macOS; root-caused from CI logs (Linux run still in progress at the time):**
   - **macOS (real bug, fixed):** `region[0].loop_enabled=1` line was silently missing from the actual serialized output, even though the checked-in golden file already had it correctly — meaning my hand-derivation of the golden file was right, but `serializeModel()` itself was broken. Root cause: `writeLine(std::string&, const std::string&, bool)` in `core/model/serialize.cpp` called `writeLine(out, key, value ? "1" : "0")` — the ternary's `const char*` result binds to the `bool` overload again (pointer→bool is a standard conversion, beating pointer→`std::string`'s user-defined conversion), producing genuine infinite recursion. MSVC's own `C4717` warning caught this independently on the Windows build. Because the recursion has no observable side effects, it's undefined behavior that the optimizer is permitted to (and did, on Clang/AppleClang) eliminate outright — silently dropping that one field's output instead of crashing or hanging. Fixed by forcing the recursive call to bind to the `std::string` overload explicitly: `writeLine(out, key, std::string(value ? "1" : "0"))`.
   - **Windows (real bug, fixed):** link failure `LNK2038: mismatch detected for 'RuntimeLibrary'` — vendored sfizz's `SfizzConfig.cmake` forces `CMAKE_MSVC_RUNTIME_LIBRARY` to static (`MultiThreaded...`) for itself on MSVC, while our own targets (and JUCE/Catch2) got CMake's default dynamic runtime, and `sfizz` links statically into `sampler-core` → `fbsampler-tests`, so the final executable needed both CRT variants. This was latent, not something Story 1.1 introduced — it's exposed the moment any target that transitively links sfizz also links something built with the default (dynamic) runtime, e.g. `fbsampler-tests` growing to include the new model tests, or simply the CRT-linking objects (`libcpmt.lib`) themselves. Fixed by setting `CMAKE_MSVC_RUNTIME_LIBRARY` to static explicitly at the top of `CMakeLists.txt`, before any `FetchContent`/`add_subdirectory`, so every target (ours and vendored) is consistently static — also the standard choice for a shipped plugin (avoids depending on a matching MSVC redistributable on end-user machines).
-  - Both fixes pushed in a follow-up commit; re-verifying via CI.
-- **Action needed before this story can honestly be marked done:** confirm the next CI run is green on all three platforms (this session's sandbox still cannot execute a local build/test — see above).
+  - Both fixes pushed in a follow-up commit (`6d05631`); re-verification run still showed a **third** issue on Windows only: the golden-snapshot comparison failed with a byte-identical-looking Catch2 text diff (both sides printed the same visible characters). Root cause: no `.gitattributes` existed, so `windows-latest` runners' default `core.autocrlf` silently converted the checked-in golden file's `LF` line endings to `CRLF` on checkout — invisible in a text-based diff view, but a real byte mismatch in the `REQUIRE(text == reference)` comparison. Fixed by adding `.gitattributes` forcing `tests/golden/*.txt text eol=lf` (commit `c8b019e`).
+  - Final run (`29619314765`): **windows/macos/linux all green**, including the golden-snapshot and AD-6 guard tests.
+- All three real bugs found this way (recursive `writeLine(bool)`, MSVC CRT mismatch, Windows CRLF corruption of the golden file) were only reachable by actually running CI — none were things static code review would have reliably caught, which is exactly why this session's sandbox limitation (no working local C++ toolchain) mattered and why Task 5 explicitly required real CI execution as the tripwire.
 
 ### Completion Notes List
 
@@ -114,5 +116,7 @@ claude-sonnet-5 (Claude Code)
 - tests/golden/model_golden_test.cpp
 - tests/golden/model_v0_reference.txt
 - tests/CMakeLists.txt (modified: added new test sources + FBSAMPLER_GOLDEN_DIR compile definition)
+- CMakeLists.txt (modified: pin CMAKE_MSVC_RUNTIME_LIBRARY to static, project-wide)
+- .gitattributes (new: force LF for tests/golden/*.txt)
 - docs/implementation-artifacts/1-2-canonical-model-v0-with-a-written-contract.md (story tracking)
 - docs/implementation-artifacts/sprint-status.yaml (status tracking)

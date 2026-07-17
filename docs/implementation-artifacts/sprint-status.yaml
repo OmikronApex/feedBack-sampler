@@ -51,7 +51,7 @@ development_status:
   # Epic 1: First Sound — play an SFZ instrument in a DAW
   epic-1: in-progress
   1-1-buildable-skeleton-on-three-platforms: done
-  1-2-canonical-model-v0-with-a-written-contract: in-progress
+  1-2-canonical-model-v0-with-a-written-contract: review
   1-3-sfz-frontend-lowers-real-instruments: ready-for-dev
   1-4-the-engine-makes-sound: ready-for-dev
   1-5-play-it-live-in-a-daw: ready-for-dev
