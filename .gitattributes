@@ -1,0 +1,4 @@
+# Golden-file fixtures are byte-compared across platforms (Story 1.2 AC2);
+# without this, Windows checkouts convert LF -> CRLF and silently break the
+# comparison (invisible in a text diff, but a real byte mismatch).
+tests/golden/*.txt text eol=lf
