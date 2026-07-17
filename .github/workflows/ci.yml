@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  PLUGINVAL_VERSION: "1.0.4"
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            pluginval_zip: pluginval_Windows.zip
+            pluginval_bin: ./pluginval.exe
+            vst3: build/plugin/feedback-sampler-plugin_artefacts/Release/VST3/feedBack Sampler.vst3
+          - name: macos
+            os: macos-latest
+            pluginval_zip: pluginval_macOS.zip
+            pluginval_bin: pluginval.app/Contents/MacOS/pluginval
+            vst3: build/plugin/feedback-sampler-plugin_artefacts/Release/VST3/feedBack Sampler.vst3
+          - name: linux
+            os: ubuntu-latest
+            pluginval_zip: pluginval_Linux.zip
+            pluginval_bin: ./pluginval
+            vst3: build/plugin/feedback-sampler-plugin_artefacts/Release/VST3/feedBack Sampler.vst3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxcomposite-dev \
+            libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev \
+            libxrender-dev libfreetype6-dev libfontconfig1-dev \
+            libgl1-mesa-dev libcurl4-openssl-dev xvfb
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Download pluginval
+        shell: bash
+        run: |
+          curl -fL -o pluginval.zip \
+            "https://github.com/Tracktion/pluginval/releases/download/v${PLUGINVAL_VERSION}/${{ matrix.pluginval_zip }}"
+          unzip -o pluginval.zip
+
+      - name: Run pluginval (strictness 5)
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            xvfb-run -a "${{ matrix.pluginval_bin }}" --strictness-level 5 --validate "${{ matrix.vst3 }}"
+          else
+            "${{ matrix.pluginval_bin }}" --strictness-level 5 --validate "${{ matrix.vst3 }}"
+          fi

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>feedBack Sampler — key screens</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f172a; --surface:#1e293b; --inset:#0b1220; --sidebar:#111827;
+    --primary:#0ea5e9; --primaryHi:#38bdf8; --onAccent:#f8fafc; --destructive:#ef4444;
+    --text:#f8fafc; --textDim:#94a3b8; --border:#334155;
+    --good:#22c55e; --mid:#eab308; --low:#ef4444; --gold:#e8c040; --focus:#38bdf8;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:#020617;color:var(--text);font-family:Rubik,system-ui,sans-serif;font-size:14px;padding:2rem;display:flex;flex-direction:column;gap:2.5rem;align-items:center}
+  h2{font-size:.8rem;font-weight:500;color:var(--textDim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem}
+  .frame-note{color:var(--textDim);font-size:.75rem;margin-top:.5rem}
+  .plugin{width:960px;height:600px;background:var(--bg);border:1px solid var(--border);border-radius:.75rem;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  /* header */
+  .hdr{height:48px;flex:0 0 48px;display:flex;align-items:center;gap:.75rem;padding:0 1rem;background:var(--sidebar);border-bottom:1px solid var(--border)}
+  .mark{font-weight:700;font-size:1.05rem;letter-spacing:-.02em}
+  .mark b{color:var(--primary)}
+  .hdr .lib{font-weight:600;margin-left:.5rem}
+  .badge{border-radius:999px;font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:.14rem .55rem}
+  .b-sfz{background:rgba(14,165,233,.2);color:var(--primaryHi)}
+  .b-sf2{background:rgba(232,192,64,.2);color:var(--gold)}
+  .b-ds{background:rgba(34,197,94,.2);color:var(--good)}
+  .spacer{flex:1}
+  .voices{font-variant-numeric:tabular-nums;color:var(--textDim);font-size:.78rem}
+  .icon-btn{width:32px;height:32px;border-radius:.5rem;border:none;background:transparent;color:var(--textDim);font-size:1rem;cursor:pointer;display:grid;place-items:center}
+  .icon-btn:hover{background:var(--surface);color:var(--text)}
+  .icon-btn.active{background:var(--surface);color:var(--primaryHi)}
+  .body{flex:1;display:flex;min-height:0}
+  /* browser sidebar */
+  .browser{width:280px;flex:0 0 280px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:.75rem}
+  .search{background:var(--inset);border:1px solid var(--border);border-radius:.5rem;color:var(--text);padding:.45rem .7rem;font:inherit;font-size:.82rem;width:100%}
+  .search::placeholder{color:var(--textDim)}
+  .pills{display:flex;gap:.35rem;margin:.6rem 0}
+  .pill{border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--textDim);font-size:.68rem;font-weight:500;padding:.2rem .6rem;cursor:pointer}
+  .pill.on{background:var(--primary);border-color:var(--primary);color:var(--onAccent)}
+  .rows{overflow:auto;flex:1;display:flex;flex-direction:column;gap:2px;margin-top:.25rem}
+  .row{display:flex;align-items:center;gap:.55rem;padding:.5rem .6rem;border-radius:.5rem;cursor:pointer;border-left:2px solid transparent}
+  .row:hover{background:var(--surface)}
+  .row.sel{background:var(--surface);border-left-color:var(--primary)}
+  .row .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.82rem}
+  .row .sz{color:var(--textDim);font-size:.7rem;font-variant-numeric:tabular-nums}
+  .dot{width:7px;height:7px;border-radius:50%;flex:0 0 7px}
+  .d-good{background:var(--good)} .d-low{background:var(--low)}
+  .loadbar{height:2px;background:var(--border);border-radius:1px;margin:.15rem .6rem 0;overflow:hidden}
+  .loadbar i{display:block;height:100%;width:64%;background:var(--primary)}
+  /* main pane */
+  .main{flex:1;padding:1rem;display:flex;flex-direction:column;gap:1rem;min-width:0}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:.85rem 1rem}
+  .card h3{font-size:.68rem;font-weight:600;color:var(--textDim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.8rem}
+  .controls{display:flex;gap:1.5rem;flex-wrap:wrap}
+  .knob{display:flex;flex-direction:column;align-items:center;gap:.4rem;width:64px}
+  .knob svg{display:block}
+  .knob .kl{font-size:.68rem;color:var(--textDim);text-align:center}
+  .kv{font-size:.7rem;color:var(--text);font-variant-numeric:tabular-nums}
+  .presetrow{display:flex;align-items:center;gap:.6rem}
+  .select{background:var(--inset);border:1px solid var(--border);border-radius:.5rem;color:var(--text);padding:.4rem .7rem;font:inherit;font-size:.82rem}
+  /* artwork frame */
+  .artframe{flex:1;background:var(--inset);border:1px solid var(--border);border-radius:.75rem;padding:.75rem;display:flex;flex-direction:column;min-height:0}
+  .artmeta{display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem}
+  .artmeta .nm{font-weight:600;font-size:.9rem}
+  .artwork{flex:1;border-radius:.35rem;background:
+     linear-gradient(rgba(10,14,10,.35),rgba(10,14,10,.35)),
+     radial-gradient(ellipse at 30% 20%, #4a3b2a 0%, #241c12 60%, #15100a 100%);
+     display:flex;align-items:flex-end;justify-content:center;padding:1.2rem;gap:2rem;position:relative}
+  .artwork .wm{position:absolute;top:1rem;left:1.2rem;font-family:Georgia,serif;color:#d8c9a8;font-size:1.1rem;letter-spacing:.14em}
+  .dsknob{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+  .dsknob .k{width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #6b5b43, #2b2215);border:2px solid #8a774f;position:relative}
+  .dsknob .k::after{content:"";position:absolute;left:50%;top:6px;width:2px;height:14px;background:#e8dcbb;transform:translateX(-50%) rotate(28deg);transform-origin:50% 20px}
+  .dsknob span{font-family:Georgia,serif;color:#d8c9a8;font-size:.68rem;letter-spacing:.1em}
+  /* settings overlay */
+  .scrim{position:relative;flex:1;display:flex}
+  .scrim::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:1}
+  .settings{position:absolute;z-index:2;inset:8% 18%;background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+  .settings h3{font-size:1rem;font-weight:600}
+  .folder{display:flex;align-items:center;gap:.6rem;background:var(--inset);border:1px solid var(--border);border-radius:.5rem;padding:.5rem .7rem;font-size:.8rem}
+  .folder .p{flex:1;color:var(--textDim);user-select:text}
+  .x{color:var(--destructive);background:none;border:none;cursor:pointer;font-size:.9rem}
+  .btn{background:var(--primary);color:var(--onAccent);border:none;border-radius:.5rem;padding:.45rem .9rem;font:inherit;font-size:.82rem;font-weight:500;cursor:pointer;align-self:flex-start}
+  .btn:hover{background:var(--primaryHi)}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .fieldrow{display:flex;align-items:center;justify-content:space-between;font-size:.85rem}
+  .fieldrow .hint{color:var(--textDim);font-size:.72rem}
+</style>
+</head>
+<body>
+
+<div>
+<h2>1 · Instrument view — generated controls (SFZ library) + library browser open</h2>
+<div class="plugin">
+  <div class="hdr">
+    <button class="icon-btn active" title="Library browser">☰</button>
+    <span class="mark">fee<b>[dB]</b>ack&nbsp;sampler</span>
+    <span class="lib">Virtuoso Strings — Violin Sec.</span>
+    <span class="badge b-sfz">SFZ</span>
+    <span class="spacer"></span>
+    <span class="voices">37 / 128 voices</span>
+    <button class="icon-btn" title="Settings">⚙</button>
+  </div>
+  <div class="body">
+    <div class="browser">
+      <input class="search" placeholder="Search libraries…" value="">
+      <div class="pills">
+        <button class="pill on">All</button><button class="pill">SFZ</button>
+        <button class="pill">SF2/3</button><button class="pill">Decent</button>
+      </div>
+      <div class="rows">
+        <div class="row"><span class="dot d-good"></span><span class="nm">Felt Piano — Studio</span><span class="badge b-ds">DS</span><span class="sz">1.2 GB</span></div>
+        <div class="row sel"><span class="dot d-good"></span><span class="nm">Virtuoso Strings — Violin Sec.</span><span class="badge b-sfz">SFZ</span><span class="sz">840 MB</span></div>
+        <div class="row"><span class="dot d-good"></span><span class="nm">GeneralUser GS</span><span class="badge b-sf2">SF2</span><span class="sz">30 MB</span></div>
+        <div class="row"><span class="nm">Choir Aahs — Cathedral</span><span class="badge b-sf2">SF3</span><span class="sz">96 MB</span></div>
+        <div class="loadbar"><i></i></div>
+        <div class="row"><span class="dot d-low"></span><span class="nm">Old Tape Keys</span><span class="badge b-ds">DS</span><span class="sz">410 MB</span></div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="card">
+        <h3>Dynamics &amp; Expression — library mapped</h3>
+        <div class="controls">
+          <div class="knob"><svg width="52" height="52"><circle cx="26" cy="26" r="21" fill="none" stroke="#334155" stroke-width="4"/><path d="M 11 39 A 21 21 0 1 1 41 39" fill="none" stroke="#0ea5e9" stroke-width="4" stroke-dasharray="70 200"/><line x1="26" y1="26" x2="14" y2="36" stroke="#f8fafc" stroke-width="2"/></svg><span class="kl">Dynamics<br>CC1</span><span class="kv">64</span></div>
+          <div class="knob"><svg width="52" height="52"><circle cx="26" cy="26" r="21" fill="none" stroke="#334155" stroke-width="4"/><path d="M 11 39 A 21 21 0 1 1 41 39" fill="none" stroke="#0ea5e9" stroke-width="4" stroke-dasharray="40 200"/><line x1="26" y1="26" x2="18" y2="10" stroke="#f8fafc" stroke-width="2"/></svg><span class="kl">Vibrato<br>CC21</span><span class="kv">32</span></div>
+          <div class="knob"><svg width="52" height="52"><circle cx="26" cy="26" r="21" fill="none" stroke="#334155" stroke-width="4"/><path d="M 11 39 A 21 21 0 1 1 41 39" fill="none" stroke="#0ea5e9" stroke-width="4" stroke-dasharray="110 200"/><line x1="26" y1="26" x2="40" y2="30" stroke="#f8fafc" stroke-width="2"/></svg><span class="kl">Reverb<br>CC91</span><span class="kv">96</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Generic</h3>
+        <div class="controls">
+          <div class="knob"><svg width="52" height="52"><circle cx="26" cy="26" r="21" fill="none" stroke="#334155" stroke-width="4"/><path d="M 11 39 A 21 21 0 1 1 41 39" fill="none" stroke="#0ea5e9" stroke-width="4" stroke-dasharray="85 200"/><line x1="26" y1="26" x2="34" y2="12" stroke="#f8fafc" stroke-width="2"/></svg><span class="kl">Volume</span><span class="kv">-6.0 dB</span></div>
+          <div class="knob"><svg width="52" height="52"><circle cx="26" cy="26" r="21" fill="none" stroke="#334155" stroke-width="4"/><path d="M 11 39 A 21 21 0 1 1 41 39" fill="none" stroke="#0ea5e9" stroke-width="4" stroke-dasharray="52 200"/><line x1="26" y1="26" x2="26" y2="8" stroke="#f8fafc" stroke-width="2"/></svg><span class="kl">Pan</span><span class="kv">C</span></div>
+          <div class="knob"><svg width="52" height="52"><circle cx="26" cy="26" r="21" fill="none" stroke="#334155" stroke-width="4"/><path d="M 11 39 A 21 21 0 1 1 41 39" fill="none" stroke="#0ea5e9" stroke-width="4" stroke-dasharray="52 200"/><line x1="26" y1="26" x2="26" y2="8" stroke="#f8fafc" stroke-width="2"/></svg><span class="kl">Tuning</span><span class="kv">±0 ct</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="frame-note">Browser open at 960px width · selected row carries the 2px primary left-accent · failing library keeps its row with a red status dot · SF3 row shows an in-progress 2px load bar.</p>
+</div>
+
+<div>
+<h2>2 · Instrument view — Decent Sampler artwork inside the feedBack frame</h2>
+<div class="plugin">
+  <div class="hdr">
+    <button class="icon-btn" title="Library browser">☰</button>
+    <span class="mark">fee<b>[dB]</b>ack&nbsp;sampler</span>
+    <span class="lib">Felt Piano — Studio</span>
+    <span class="badge b-ds">Decent Sampler</span>
+    <span class="spacer"></span>
+    <span class="voices">12 / 128 voices</span>
+    <button class="icon-btn" title="Settings">⚙</button>
+  </div>
+  <div class="body">
+    <div class="main">
+      <div class="artframe">
+        <div class="artmeta"><span class="nm">Felt Piano — Studio</span><span class="badge b-ds">Decent Sampler</span><span class="spacer"></span><span class="kv" style="color:var(--textDim)">library UI — author artwork</span></div>
+        <div class="artwork">
+          <span class="wm">FELT&nbsp;PIANO</span>
+          <div class="dsknob"><div class="k"></div><span>TONE</span></div>
+          <div class="dsknob"><div class="k"></div><span>NOISE</span></div>
+          <div class="dsknob"><div class="k"></div><span>VERB</span></div>
+          <div class="dsknob"><div class="k"></div><span>DYN</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="frame-note">The warm wooden artwork is the library's own — untouched. feedBack identity lives only in the header and the inset frame.</p>
+</div>
+
+<div>
+<h2>3 · Settings overlay</h2>
+<div class="plugin">
+  <div class="hdr">
+    <button class="icon-btn" title="Library browser">☰</button>
+    <span class="mark">fee<b>[dB]</b>ack&nbsp;sampler</span>
+    <span class="lib">Felt Piano — Studio</span>
+    <span class="badge b-ds">DS</span>
+    <span class="spacer"></span>
+    <span class="voices">0 / 128 voices</span>
+    <button class="icon-btn active" title="Settings">⚙</button>
+  </div>
+  <div class="scrim">
+    <div class="settings">
+      <h3>Settings</h3>
+      <div>
+        <h3 style="font-size:.68rem;color:var(--textDim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Library folders</h3>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <div class="folder"><span class="p">D:\Samples\Pianobook</span><button class="x">✕</button></div>
+          <div class="folder"><span class="p">D:\Samples\sfz</span><button class="x">✕</button></div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:.6rem">
+          <button class="btn">Add folder…</button>
+          <button class="btn ghost">Rescan</button>
+        </div>
+      </div>
+      <div class="fieldrow"><span>Voice limit</span><select class="select"><option>128</option></select></div>
+      <div class="fieldrow"><span>Stream from disk above</span><span><select class="select"><option>500 MB</option></select> <span class="hint">smaller libraries load fully into RAM</span></span></div>
+      <div class="fieldrow"><span class="hint" style="user-select:text">feedBack Sampler 0.1.0 · AGPL-3.0 · open-source licenses…</span></div>
+    </div>
+  </div>
+</div>
+<p class="frame-note">Overlay with 60% scrim · paths are selectable text (v3 policy) · destructive ✕ is the only red in the chrome.</p>
+</div>
+
+</body>
+</html>
