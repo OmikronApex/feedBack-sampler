@@ -105,7 +105,7 @@ void writeLine(std::string& out, const std::string& key, const std::string& valu
 void writeLine(std::string& out, const std::string& key, float value) { writeLine(out, key, formatFloat(value)); }
 void writeLine(std::string& out, const std::string& key, int value) { writeLine(out, key, std::to_string(value)); }
 void writeLine(std::string& out, const std::string& key, unsigned value) { writeLine(out, key, std::to_string(value)); }
-void writeLine(std::string& out, const std::string& key, bool value) { writeLine(out, key, value ? "1" : "0"); }
+void writeLine(std::string& out, const std::string& key, bool value) { writeLine(out, key, std::string(value ? "1" : "0")); }
 
 std::string prefix(const std::string& container, std::size_t index)
 {

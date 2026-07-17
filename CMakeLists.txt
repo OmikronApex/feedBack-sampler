@@ -10,6 +10,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Static CRT on MSVC for every target (us and vendored deps alike): avoids
+# shipping/depending on a matching MSVC redistributable on end-user machines,
+# and matches what vendored sfizz already forces for itself in
+# SfizzConfig.cmake — set here, before any FetchContent/add_subdirectory, so
+# JUCE/Catch2/sfizz all inherit the same choice and don't LNK2038 against
+# each other over a /MT vs /MD mismatch.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(fbsampler_deps)
