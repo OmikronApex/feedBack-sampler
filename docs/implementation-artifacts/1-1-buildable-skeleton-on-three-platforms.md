@@ -4,7 +4,7 @@ baseline_commit: 6dd627fcda5f96089112bd65434e334a4f288a58
 
 # Story 1.1: Buildable skeleton on three platforms
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -41,9 +41,9 @@ so that every subsequent story lands on green, verifiable infrastructure.
   - [x] `.github/workflows/` pamplejuce-style matrix: windows-latest, macos-latest, ubuntu-latest; build + ctest on every push/PR
   - [x] Linux CI deps (X11/ALSA dev packages for JUCE)
   - [x] Download/pin pluginval 1.0.4 in CI; run at strictness 5 against the built VST3 on all three platforms; failure fails the build
-- [ ] Task 6: Verify green (AC: 1, 2)
+- [x] Task 6: Verify green (AC: 1, 2)
   - [x] Local build passes on the dev machine (Windows)
-  - [ ] CI passes on all three platforms — **BLOCKED: no GitHub remote; feedBack-sampler lives inside the umbrella repo `C:/Users/rkasp/PycharmProjects` (no remote configured). Actions needs `.github/` at the root of a pushed GitHub repo.**
+  - [x] CI passes on all three platforms (github.com/OmikronApex/feedBack-sampler, run 4: windows/linux/macos all success incl. pluginval strictness 5)
 
 ## Dev Notes
 
@@ -94,13 +94,17 @@ claude-fable-5 (Claude Code)
 - CI matrix (`.github/workflows/ci.yml`): windows/macos/ubuntu-latest, Linux X11/ALSA deps, build + ctest + pluginval 1.0.4 strictness 5 (xvfb on Linux), failure fails build.
 - LICENSE AGPL-3.0 added (NFR-6).
 - Local Windows verification: VS2022 Release configure/build green, ctest passed, `feedBack Sampler.vst3` artefact produced.
-- **BLOCKER (Task 6.2):** CI unverifiable — no GitHub remote; project sits inside umbrella repo. Needs dedicated GitHub repo (user decision).
+- Per user decision, feedBack-sampler git-initialized standalone and pushed to public repo github.com/OmikronApex/feedBack-sampler.
+- CI iterations to green: (1) sfizz 1.2.3 upstream bugs — GCC rejects `0x1.fffffep-1` hexfloat in Voice.cpp; SfizzConfig.cmake applies ARM32 `-mfpu`/`-mfloat-abi` on arm64 macOS → fixed via idempotent FetchContent PATCH_COMMAND (`cmake/patches/sfizz-1.2.3-fixes.patch` + `apply_patch.cmake`). (2) AppleClang 16+ errors on `template` keyword without arg list in sfizz's vendored atomic_queue submodule → scoped `-Wno-missing-template-arg-list-after-template-kw` on sfizz targets (submodule unpatachable via git apply). (3) Transient macOS runner DNS failure downloading pluginval → curl retries.
+- Final CI run: all three platforms success — build, ctest, pluginval strictness 5 against the VST3.
 
 ### File List
 
 - CMakeLists.txt
 - cmake/fbsampler_deps.cmake
 - cmake/fbsampler_guards.cmake
+- cmake/patches/sfizz-1.2.3-fixes.patch
+- cmake/patches/apply_patch.cmake
 - core/CMakeLists.txt
 - core/include/fbsampler/version.h
 - core/config/version.cpp
@@ -127,4 +131,5 @@ claude-fable-5 (Claude Code)
 
 ## Change Log
 
-- 2026-07-17: Story 1.1 implementation — full skeleton, pinned deps, core lib + AD-6 guard, VST3 shell, tests + CI. Local Windows build/tests green; CI verification blocked on missing GitHub remote.
+- 2026-07-17: Story 1.1 implementation — full skeleton, pinned deps, core lib + AD-6 guard, VST3 shell, tests + CI. Local Windows build/tests green.
+- 2026-07-17: Repo pushed to github.com/OmikronApex/feedBack-sampler (public, per user). sfizz 1.2.3 patched (GCC hexfloat, arm64 flags), AppleClang atomic_queue suppression, pluginval download retries. CI green on windows/linux/macos incl. pluginval strictness 5. Status → review.
