@@ -1,5 +1,15 @@
+# Generated from config/version.cpp.in so coreVersion() always tracks the
+# top-level project(VERSION ...) instead of drifting as an independent literal.
+configure_file(
+    config/version.cpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+    @ONLY
+)
+
 add_library(sampler-core STATIC
-    config/version.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+    model/validate.cpp
+    model/serialize.cpp
 )
 
 target_include_directories(sampler-core

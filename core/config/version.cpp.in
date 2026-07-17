@@ -4,7 +4,7 @@ namespace fbsampler {
 
 const char* coreVersion()
 {
-    return "0.1.0";
+    return "@PROJECT_VERSION@";
 }
 
 } // namespace fbsampler

@@ -4,7 +4,7 @@ baseline_commit: 6dd627fcda5f96089112bd65434e334a4f288a58
 
 # Story 1.1: Buildable skeleton on three platforms
 
-Status: review
+Status: done
 
 ## Story
 
@@ -133,3 +133,15 @@ claude-fable-5 (Claude Code)
 
 - 2026-07-17: Story 1.1 implementation — full skeleton, pinned deps, core lib + AD-6 guard, VST3 shell, tests + CI. Local Windows build/tests green.
 - 2026-07-17: Repo pushed to github.com/OmikronApex/feedBack-sampler (public, per user). sfizz 1.2.3 patched (GCC hexfloat, arm64 flags), AppleClang atomic_queue suppression, pluginval download retries. CI green on windows/linux/macos incl. pluginval strictness 5. Status → review.
+
+### Review Findings
+
+- [x] [Review][Decision] AD-6 guard has no automated regression test — resolved: user chose option 1 (add automated coverage now). Implemented as `tests/ad6_guard_negative/` (isolated CMake fixture linking a fake `juce_gui_basics` target) + a `ctest` entry in `tests/CMakeLists.txt` (`ad6_guard_negative`) asserting configure fails with the "AD-6 violation" message. Verified locally: fixture correctly fails configure with the expected message.
+- [x] [Review][Patch] Version drift between CMake project version and `fbsampler::coreVersion()` [core/config/version.cpp:7] — fixed: `core/config/version.cpp` → `version.cpp.in`, generated via `configure_file(@ONLY)` from `${PROJECT_VERSION}` in `core/CMakeLists.txt`.
+- [x] [Review][Patch] pluginval binary may not be executable after unzip on macOS/Linux (no `chmod +x`) [.github/workflows/ci.yml:60] — fixed: added `chmod +x` on non-Windows after unzip.
+- [x] [Review][Patch] Hardcoded VST3 artifact path is fragile across JUCE version bumps [.github/workflows/ci.yml:22,27,32] — fixed: added a "Locate VST3 artifact" step that finds the `.vst3` bundle at runtime instead of hardcoding its path per-OS.
+- [x] [Review][Patch] No timeout on the "Run pluginval" CI step [.github/workflows/ci.yml:62] — fixed: added `timeout-minutes: 10` to the pluginval run step.
+- [x] [Review][Defer] AppleClang atomic_queue suppression only scoped to `APPLE AND Clang`, not exercised elsewhere in CI matrix [cmake/fbsampler_deps.cmake:47] — deferred, pre-existing scope limitation not hit by current CI matrix
+- [x] [Review][Defer] sfizz `FetchContent` `UPDATE_DISCONNECTED ON` risks stale vendored source if the patch file changes without clearing the build cache [cmake/fbsampler_deps.cmake:26] — deferred, standard FetchContent trade-off, not a defect
+- [x] [Review][Defer] AD-6 guard only inspects immediate LINK_LIBRARIES, not transitive dependencies of linked libs [cmake/fbsampler_guards.cmake:8-9] — deferred, no current dependency exercises this gap
+- [x] [Review][Defer] sfizz patch's arm64/aarch64 exclusion regex is platform-agnostic though intended for macOS [cmake/patches/sfizz-1.2.3-fixes.patch] — deferred, untested path (no ARM Linux in CI matrix)

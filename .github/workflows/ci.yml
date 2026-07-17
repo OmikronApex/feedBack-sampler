@@ -19,17 +19,14 @@ jobs:
             os: windows-latest
             pluginval_zip: pluginval_Windows.zip
             pluginval_bin: ./pluginval.exe
-            vst3: build/plugin/feedback-sampler-plugin_artefacts/Release/VST3/feedBack Sampler.vst3
           - name: macos
             os: macos-latest
             pluginval_zip: pluginval_macOS.zip
             pluginval_bin: pluginval.app/Contents/MacOS/pluginval
-            vst3: build/plugin/feedback-sampler-plugin_artefacts/Release/VST3/feedBack Sampler.vst3
           - name: linux
             os: ubuntu-latest
             pluginval_zip: pluginval_Linux.zip
             pluginval_bin: ./pluginval
-            vst3: build/plugin/feedback-sampler-plugin_artefacts/Release/VST3/feedBack Sampler.vst3
 
     steps:
       - uses: actions/checkout@v4
@@ -52,18 +49,33 @@ jobs:
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
 
+      - name: Locate VST3 artifact
+        id: vst3
+        shell: bash
+        run: |
+          match=$(find build/plugin -iname "*.vst3" -maxdepth 6 | head -n1)
+          if [ -z "$match" ]; then
+            echo "No .vst3 artifact found under build/plugin" >&2
+            exit 1
+          fi
+          echo "path=$match" >> "$GITHUB_OUTPUT"
+
       - name: Download pluginval
         shell: bash
         run: |
           curl -fL --retry 5 --retry-delay 10 --retry-all-errors -o pluginval.zip \
             "https://github.com/Tracktion/pluginval/releases/download/v${PLUGINVAL_VERSION}/${{ matrix.pluginval_zip }}"
           unzip -o pluginval.zip
+          if [ "${{ runner.os }}" != "Windows" ]; then
+            chmod +x "${{ matrix.pluginval_bin }}"
+          fi
 
       - name: Run pluginval (strictness 5)
         shell: bash
+        timeout-minutes: 10
         run: |
           if [ "${{ runner.os }}" = "Linux" ]; then
-            xvfb-run -a "${{ matrix.pluginval_bin }}" --strictness-level 5 --validate "${{ matrix.vst3 }}"
+            xvfb-run -a "${{ matrix.pluginval_bin }}" --strictness-level 5 --validate "${{ steps.vst3.outputs.path }}"
           else
-            "${{ matrix.pluginval_bin }}" --strictness-level 5 --validate "${{ matrix.vst3 }}"
+            "${{ matrix.pluginval_bin }}" --strictness-level 5 --validate "${{ steps.vst3.outputs.path }}"
           fi

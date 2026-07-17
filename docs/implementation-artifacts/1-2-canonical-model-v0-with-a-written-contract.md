@@ -1,6 +1,10 @@
+---
+baseline_commit: 957bbfd3d5047f6bf20e5000566da6603f40f7c3
+---
+
 # Story 1.2: Canonical model v0 with a written contract
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
@@ -15,26 +19,26 @@ so that every frontend lowers into one verifiable representation (AD-11).
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Write the model spec document (AC: 1)
-  - [ ] `core/model/SPEC.md` (in-repo, versioned): the SFZ-superset region/voice/mod-matrix model
-  - [ ] Fixed units: pitch in **cents**, gain in **dB**, times in **seconds**, curves normalized **0..1** (spine AD-11); audio float32; time-in-samples applies inside the engine, the *model* uses seconds
-  - [ ] Explicit documented default for every field
-  - [ ] Schema version constant (start at 1) stamped into every serialized artifact
-  - [ ] Spec covers: regions (key/vel ranges, sample refs, loops, offsets, tuning), envelopes (ADSR+), the modulation matrix (source → target → depth/curve; extensible with SF2 curve/source primitives later per AD-1), and the **control map** (stable control ID + display/accessible name per AD-8/AD-11)
-- [ ] Task 2: Implement the model types in `core/model/` (AC: 1)
-  - [ ] Plain-data C++17 types in namespace `fbsampler`, public headers in `core/include/fbsampler/`
-  - [ ] No JUCE types in the public API; std-only value types
-  - [ ] Defaults in code match SPEC.md exactly (single source: consider generating or cross-checking constants)
-- [ ] Task 3: Model validation suite (AC: 1)
-  - [ ] `validate(const InstrumentModel&) -> std::vector<Diagnostic>` — range checks, unit sanity, referential integrity (regions reference existing samples/controls), required-field presence
-  - [ ] `Diagnostic` type per spine convention: severity + stable code + human message + source location; **no exceptions across the core API**
-  - [ ] Catch2 tests: valid instance passes; each out-of-contract mutation class is rejected with the right diagnostic code
-- [ ] Task 4: Deterministic golden-file serialization (AC: 2)
-  - [ ] Text dump (JSON or similar) of a model instance: stable field order, fixed float formatting (e.g. shortest round-trip or fixed precision — pick one and pin it), schema version header
-  - [ ] Byte-stable across platforms: no locale-dependent formatting, no pointer/ordering nondeterminism, `\n` line endings enforced
-  - [ ] Catch2 test: serialize → reparse → reserialize is byte-identical; a checked-in reference snapshot matches on all CI platforms
+- [x] Task 1: Write the model spec document (AC: 1)
+  - [x] `core/model/SPEC.md` (in-repo, versioned): the SFZ-superset region/voice/mod-matrix model
+  - [x] Fixed units: pitch in **cents**, gain in **dB**, times in **seconds**, curves normalized **0..1** (spine AD-11); audio float32; time-in-samples applies inside the engine, the *model* uses seconds
+  - [x] Explicit documented default for every field
+  - [x] Schema version constant (start at 1) stamped into every serialized artifact
+  - [x] Spec covers: regions (key/vel ranges, sample refs, loops, offsets, tuning), envelopes (ADSR+), the modulation matrix (source → target → depth/curve; extensible with SF2 curve/source primitives later per AD-1), and the **control map** (stable control ID + display/accessible name per AD-8/AD-11)
+- [x] Task 2: Implement the model types in `core/model/` (AC: 1)
+  - [x] Plain-data C++17 types in namespace `fbsampler`, public headers in `core/include/fbsampler/`
+  - [x] No JUCE types in the public API; std-only value types
+  - [x] Defaults in code match SPEC.md exactly (single source: consider generating or cross-checking constants)
+- [x] Task 3: Model validation suite (AC: 1)
+  - [x] `validate(const InstrumentModel&) -> std::vector<Diagnostic>` — range checks, unit sanity, referential integrity (regions reference existing samples/controls), required-field presence
+  - [x] `Diagnostic` type per spine convention: severity + stable code + human message + source location; **no exceptions across the core API**
+  - [x] Catch2 tests: valid instance passes; each out-of-contract mutation class is rejected with the right diagnostic code
+- [x] Task 4: Deterministic golden-file serialization (AC: 2)
+  - [x] Text dump (JSON or similar) of a model instance: stable field order, fixed float formatting (e.g. shortest round-trip or fixed precision — pick one and pin it), schema version header
+  - [x] Byte-stable across platforms: no locale-dependent formatting, no pointer/ordering nondeterminism, `\n` line endings enforced
+  - [x] Catch2 test: serialize → reparse → reserialize is byte-identical; a checked-in reference snapshot matches on all CI platforms
 - [ ] Task 5: CI proof (AC: 1, 2)
-  - [ ] All tests run in the Story-1.1 CI matrix on all three platforms; the cross-platform byte-stability test is the tripwire
+  - [ ] All tests run in the Story-1.1 CI matrix on all three platforms; the cross-platform byte-stability test is the tripwire — **wiring done, execution unverified** (see Debug Log)
 
 ## Dev Notes
 
@@ -51,7 +55,11 @@ so that every frontend lowers into one verifiable representation (AD-11).
 - `core/model/` implementation, `core/include/fbsampler/` public headers, `tests/golden/` gets the reference snapshot fixture + tests (this seeds the golden harness that Story 1.3 extends per-format).
 - Naming: files `snake_case`, types `PascalCase`, functions `camelCase`, namespace `fbsampler`.
 
-### References
+### Change Log
+
+- 2026-07-17: Story 1.2 implementation — SPEC.md v0, model types, validation suite (15 diagnostic codes), deterministic golden-file serialization, tests wired into the existing CI matrix. **Not locally verified** — this session's sandbox cannot execute a C++ toolchain (see Debug Log); needs a real `ctest` run before moving to review/done.
+
+## References
 
 - [Source: docs/planning-artifacts/architecture/architecture-feedBack-sampler-2026-07-17/ARCHITECTURE-SPINE.md#AD-11, #AD-8, #AD-1, #Consistency-Conventions]
 - [Source: docs/planning-artifacts/architecture/architecture-feedBack-sampler-2026-07-17/SOLUTION-DESIGN.md#Why-a-compiler-pipeline]
@@ -62,8 +70,45 @@ so that every frontend lowers into one verifiable representation (AD-11).
 
 ### Agent Model Used
 
+claude-sonnet-5 (Claude Code)
+
+### Implementation Plan
+
+- Studied `sfz::Region` in vendored sfizz (`build/_deps/sfizz-src/src/sfizz/Region.h`) per Dev Notes before finalizing v0 field lists; mirrored its region-as-data shape (key/vel ranges, sample ref, loop, offset, tuning, amp envelope, mod connections) at v0 scope, leaving SF2-only primitives as reserved extension points (not implemented).
+- `Diagnostic`/`SourceLocation` in `core/include/fbsampler/diagnostic.h`, separate from `model.h`, since it's a general core-API error shape, not model-specific.
+- `validate()` collects every violation rather than stopping at the first (spec requires per-mutation-class Catch2 coverage, which needs all codes reachable independently in one pass over a single mutated model).
+- Serialization: hand-rolled deterministic `key=value` line format (not a JSON library dependency) with `std::to_chars`/`std::from_chars` for locale-independent, shortest-round-trip float formatting, per Dev Notes' explicit warning against `std::to_string`/iostream defaults.
+- `parseModel()` wraps its body in try/catch and returns `bool` rather than throwing, consistent with "no exceptions across the core API" even though this is a golden-file test helper, not part of `InstrumentModel`'s own public surface.
+
 ### Debug Log References
+
+- **Local build/test execution was not possible in this session's sandbox.** The C++ toolchain present (MinGW g++ 16.1.0) fails to invoke `cc1plus.exe` in this environment — both direct `g++` invocation and a CMake+Ninja configure of a trivial `int main(){}` program fail silently/with a generic "compiler is not able to compile a simple test program" error, with no underlying diagnostic. This reproduces even for code with zero dependency on this story's changes, so it's an environment limitation, not a defect introduced here.
+- All code was written and manually traced for correctness (type/logic review, hand-verified control flow through `validate()` and `serialize`/`parseModel()`), but **no test in this story has been executed**. The checked-in golden reference (`tests/golden/model_v0_reference.txt`) was derived by hand from `serializeModel()`'s field order and `std::to_chars`' documented shortest-round-trip behavior for a set of numeric values chosen specifically because their shortest decimal representation is unambiguous (0.1, -0.0, -1, 0.01, 0.8, 0.5, 0.25, and small integers) — no value requiring judgment calls about `to_chars`' scientific-notation formatting (e.g. denormals) was placed in the byte-compared golden file; those are covered instead by a separate bit-exact round-trip test that doesn't depend on knowing the exact formatted string.
+- **Action needed before this story can honestly be marked done:** run `ctest --test-dir build -C Release --output-on-failure` on a machine with a working toolchain (the Windows dev machine used for Story 1.1, or via CI) and confirm all new tests (`model_validate_test.cpp`, `golden/model_golden_test.cpp`) pass, in particular the golden-snapshot comparison, since that's the one test whose exact expected text I could not verify by execution.
 
 ### Completion Notes List
 
+- `core/model/SPEC.md`: v0 written contract — units, defaults, schema version, region/envelope/mod-matrix/control-map field tables, validation code list, serialization format.
+- Model types (`core/include/fbsampler/model.h`): `InstrumentModel`, `Region`, `EnvelopeADSR`, `ModSource`/`ModSourceKind`/`ModTarget`/`ModMatrixEntry`, `ControlMapEntry`; plain std-only data, namespace `fbsampler`.
+- `core/include/fbsampler/diagnostic.h`: `Severity`, `SourceLocation`, `Diagnostic`.
+- `validate()` (`core/model/validate.cpp` + `core/include/fbsampler/validate.h`): 15 diagnostic codes covering schema version, control-id presence/uniqueness, and per-region range/finiteness/loop/envelope/mod-matrix checks including referential integrity against the control map.
+- `serializeModel()`/`parseModel()` (`core/model/serialize.cpp` + `core/include/fbsampler/serialize.h`): deterministic `key=value` text dump, fixed field order, `std::to_chars`/`from_chars` floats, `\n`-only line endings, string escaping for `\` and newline.
+- Tests: `tests/model_validate_test.cpp` (valid instance + one test per diagnostic code + a multi-violation test), `tests/golden/model_golden_test.cpp` (determinism, round-trip byte-identity, checked-in golden snapshot compare, malformed-input rejection, bit-exact round-trip for tricky floats including denormals and negative zero).
+- Wired into the existing Story-1.1 CI matrix with no CI file changes: new sources added to `sampler-core` in `core/CMakeLists.txt`; new test files added to the existing `fbsampler-tests` Catch2 binary in `tests/CMakeLists.txt` (auto-discovered via `catch_discover_tests`, already run by `ctest` in `.github/workflows/ci.yml`).
+
 ### File List
+
+- core/model/SPEC.md
+- core/include/fbsampler/model.h
+- core/include/fbsampler/diagnostic.h
+- core/include/fbsampler/validate.h
+- core/model/validate.cpp
+- core/include/fbsampler/serialize.h
+- core/model/serialize.cpp
+- core/CMakeLists.txt (modified: added model/validate.cpp, model/serialize.cpp to sampler-core sources)
+- tests/model_validate_test.cpp
+- tests/golden/model_golden_test.cpp
+- tests/golden/model_v0_reference.txt
+- tests/CMakeLists.txt (modified: added new test sources + FBSAMPLER_GOLDEN_DIR compile definition)
+- docs/implementation-artifacts/1-2-canonical-model-v0-with-a-written-contract.md (story tracking)
+- docs/implementation-artifacts/sprint-status.yaml (status tracking)
