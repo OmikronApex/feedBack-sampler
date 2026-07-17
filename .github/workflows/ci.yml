@@ -55,7 +55,7 @@ jobs:
       - name: Download pluginval
         shell: bash
         run: |
-          curl -fL -o pluginval.zip \
+          curl -fL --retry 5 --retry-delay 10 --retry-all-errors -o pluginval.zip \
             "https://github.com/Tracktion/pluginval/releases/download/v${PLUGINVAL_VERSION}/${{ matrix.pluginval_zip }}"
           unzip -o pluginval.zip
 
