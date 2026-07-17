@@ -40,3 +40,15 @@ FetchContent_Declare(catch2
 )
 
 FetchContent_MakeAvailable(sfizz juce catch2)
+
+# sfizz's vendored atomic_queue (git submodule, unpatched) uses `template foo` without
+# an argument list — an error on AppleClang 16+ (-Wmissing-template-arg-list-after-template-kw).
+# Scoped suppression; drop when sfizz updates atomic_queue.
+if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    foreach(_sfizz_target sfizz_internal sfizz_static sfizz)
+        if(TARGET ${_sfizz_target})
+            target_compile_options(${_sfizz_target} PRIVATE
+                -Wno-missing-template-arg-list-after-template-kw)
+        endif()
+    endforeach()
+endif()
