@@ -3,7 +3,7 @@ index ff0ab5eb..147049e6 100644
 --- a/cmake/SfizzConfig.cmake
 +++ b/cmake/SfizzConfig.cmake
 @@ -51,7 +51,10 @@ endif()
-
+ 
  # Set macOS compatibility level
  if(APPLE)
 -    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9")
@@ -12,7 +12,7 @@ index ff0ab5eb..147049e6 100644
 +    # matching the C++17 consumers that link sfizz::parser.
 +    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
  endif()
-
+ 
  # If using C++17, check if aligned-new has runtime support on the platform;
 @@ -99,7 +102,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
      gw_warn(-Wall -Wextra -Wno-multichar -Werror=return-type)

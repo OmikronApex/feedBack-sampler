@@ -6,3 +6,4 @@ tests/golden/sfz/*.txt text eol=lf
 tests/golden/sfz/*.sfz text eol=lf
 tests/golden/sfz/*.inc text eol=lf
 tests/fuzz/sfz/corpus/* -text
+cmake/patches/*.patch text eol=lf
