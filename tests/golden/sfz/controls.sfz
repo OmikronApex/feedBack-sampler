@@ -1,0 +1,4 @@
+// CC labels, default_path and #include / #define expansion.
+#include "defines.inc"
+<control> default_path=samples\ label_cc74=Cutoff label_cc1=Vibrato
+<region> sample=soft.wav key=$ROOT

@@ -1,0 +1,10 @@
+// Multi-region key/velocity layering with <global>/<master>/<group> inheritance.
+<global> volume=-3
+<master> pan=-20
+
+<group> lokey=36 hikey=59 pitch_keycenter=48
+<region> sample=samples\soft.wav lovel=1 hivel=63 volume=-6
+<region> sample=samples\hard.wav lovel=64 hivel=127
+
+<group> lokey=60 hikey=84 pitch_keycenter=72 tune=-10 transpose=1
+<region> sample=samples\upper.wav key=c5

@@ -21,16 +21,25 @@ bool isFinite(float v)
     return std::isfinite(v);
 }
 
+// Range predicates are written so NaN fails them: every comparison with NaN is
+// false, so checks must assert in-range (finite && lo <= v <= hi) rather than
+// test for out-of-range (v < lo || v > hi), which NaN slips through.
+bool inRange(float v, float lo, float hi)
+{
+    return isFinite(v) && v >= lo && v <= hi;
+}
+
 void validateEnvelope(const EnvelopeADSR& env, std::vector<Diagnostic>& out)
 {
-    if (env.delaySeconds < 0.0f || env.attackSeconds < 0.0f || env.holdSeconds < 0.0f
-        || env.decaySeconds < 0.0f || env.releaseSeconds < 0.0f) {
+    const auto validTime = [](float t) { return isFinite(t) && t >= 0.0f; };
+    if (!validTime(env.delaySeconds) || !validTime(env.attackSeconds) || !validTime(env.holdSeconds)
+        || !validTime(env.decaySeconds) || !validTime(env.releaseSeconds)) {
         addError(out, "region.envelope_time_negative",
-            "Envelope time field must be >= 0");
+            "Envelope time field must be finite and >= 0");
     }
-    if (env.sustainLevel < 0.0f || env.sustainLevel > 1.0f) {
+    if (!inRange(env.sustainLevel, 0.0f, 1.0f)) {
         addError(out, "region.envelope_sustain_out_of_range",
-            "Envelope sustainLevel must be within [0, 1]");
+            "Envelope sustainLevel must be finite and within [0, 1]");
     }
 }
 
@@ -43,11 +52,19 @@ void validateRegion(const Region& region, const std::unordered_set<std::string>&
     if (region.loKey > region.hiKey) {
         addError(out, "region.key_range_invalid", "Region loKey must be <= hiKey");
     }
+    if (region.hiKey > 127 || region.rootKey > 127) {
+        addError(out, "region.key_out_of_midi_range",
+            "Region key fields must be within the MIDI range [0, 127]");
+    }
     if (region.loVelocity > region.hiVelocity) {
         addError(out, "region.velocity_range_invalid", "Region loVelocity must be <= hiVelocity");
     }
-    if (region.pan < -1.0f || region.pan > 1.0f) {
-        addError(out, "region.pan_out_of_range", "Region pan must be within [-1, 1]");
+    if (region.hiVelocity > 127) {
+        addError(out, "region.velocity_out_of_midi_range",
+            "Region velocity fields must be within the MIDI range [0, 127]");
+    }
+    if (!inRange(region.pan, -1.0f, 1.0f)) {
+        addError(out, "region.pan_out_of_range", "Region pan must be finite and within [-1, 1]");
     }
     if (!isFinite(region.gainDb)) {
         addError(out, "region.gain_not_finite", "Region gainDb must be finite");
@@ -55,15 +72,18 @@ void validateRegion(const Region& region, const std::unordered_set<std::string>&
     if (!isFinite(region.tuningCents)) {
         addError(out, "region.tuning_not_finite", "Region tuningCents must be finite");
     }
-    if (region.offsetSeconds < 0.0f) {
-        addError(out, "region.offset_negative", "Region offsetSeconds must be >= 0");
+    if (!(std::isfinite(region.offset) && region.offset >= 0.0)) {
+        addError(out, "region.offset_negative", "Region offset must be finite and >= 0");
     }
-    if (region.loopEnabled) {
-        if (region.loopStartSeconds < 0.0f || region.loopEndSeconds < 0.0f
-            || region.loopStartSeconds >= region.loopEndSeconds) {
-            addError(out, "region.loop_range_invalid",
-                "Region loop range must have 0 <= loopStartSeconds < loopEndSeconds");
-        }
+    // Loop bounds must be sane even when the loop is disabled: a NaN/negative
+    // bound must not survive a round-trip only to detonate when the loop is
+    // later enabled. The ordering constraint applies only when enabled.
+    if (!(std::isfinite(region.loopStart) && std::isfinite(region.loopEnd)
+            && region.loopStart >= 0.0 && region.loopEnd >= 0.0
+            && (!region.loopEnabled || region.loopStart < region.loopEnd))) {
+        addError(out, "region.loop_range_invalid",
+            "Region loop bounds must be finite and >= 0, with loopStart < loopEnd when "
+            "loopEnabled");
     }
 
     validateEnvelope(region.amplitudeEnvelope, out);
@@ -72,9 +92,13 @@ void validateRegion(const Region& region, const std::unordered_set<std::string>&
         if (!isFinite(mod.depth)) {
             addError(out, "region.mod_depth_not_finite", "ModMatrixEntry depth must be finite");
         }
-        if (mod.curve < 0.0f || mod.curve > 1.0f) {
+        if (!inRange(mod.curve, 0.0f, 1.0f)) {
             addError(out, "region.mod_curve_out_of_range",
-                "ModMatrixEntry curve must be within [0, 1]");
+                "ModMatrixEntry curve must be finite and within [0, 1]");
+        }
+        if (mod.source.kind == ModSourceKind::Cc && mod.source.ccNumber > 127) {
+            addError(out, "region.mod_cc_out_of_midi_range",
+                "ModSource ccNumber must be within the MIDI range [0, 127]");
         }
         if (!mod.sourceControlId.empty() && controlIds.find(mod.sourceControlId) == controlIds.end()) {
             addError(out, "region.mod_source_unknown_control",

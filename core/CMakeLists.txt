@@ -10,6 +10,7 @@ add_library(sampler-core STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
     model/validate.cpp
     model/serialize.cpp
+    frontends/sfz/sfz_frontend.cpp
 )
 
 target_include_directories(sampler-core
@@ -22,6 +23,7 @@ target_include_directories(sampler-core
 target_link_libraries(sampler-core
     PRIVATE
         sfizz::sfizz
+        sfizz::parser
 )
 
 set_target_properties(sampler-core PROPERTIES

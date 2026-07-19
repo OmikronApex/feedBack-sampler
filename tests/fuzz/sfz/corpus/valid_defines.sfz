@@ -1,0 +1,2 @@
+#define $X 60
+<region> sample=a.wav key=$X tune=-10 transpose=1 offset=22050

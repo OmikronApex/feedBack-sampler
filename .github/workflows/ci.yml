@@ -53,12 +53,17 @@ jobs:
         id: vst3
         shell: bash
         run: |
-          match=$(find build/plugin -iname "*.vst3" -maxdepth 6 | head -n1)
-          if [ -z "$match" ]; then
+          matches=$(find build/plugin -maxdepth 6 -iname "*.vst3")
+          count=$(printf '%s' "$matches" | grep -c . || true)
+          if [ "$count" -eq 0 ]; then
             echo "No .vst3 artifact found under build/plugin" >&2
             exit 1
+          elif [ "$count" -gt 1 ]; then
+            echo "Expected exactly one .vst3 artifact under build/plugin, found $count:" >&2
+            echo "$matches" >&2
+            exit 1
           fi
-          echo "path=$match" >> "$GITHUB_OUTPUT"
+          echo "path=$matches" >> "$GITHUB_OUTPUT"
 
       - name: Download pluginval
         shell: bash
@@ -79,3 +84,40 @@ jobs:
           else
             "${{ matrix.pluginval_bin }}" --strictness-level 5 --validate "${{ steps.vst3.outputs.path }}"
           fi
+
+  # Story 1.3 (NFR-4, AD-10): parser/frontend tests + the deterministic fuzz
+  # pass under ASan/UBSan on Linux. The plugin is not built here — this job
+  # exists to catch memory errors and UB in the parsing/lowering attack
+  # surface, which the release matrix above cannot see.
+  sanitize:
+    name: linux-asan-ubsan
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
+      CXX: clang++
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxcomposite-dev \
+            libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev \
+            libxrender-dev libfreetype6-dev libfontconfig1-dev \
+            libgl1-mesa-dev libcurl4-openssl-dev
+
+      - name: Configure (ASan+UBSan)
+        run: >
+          cmake -B build-san -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all"
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all"
+
+      - name: Build tests and fuzz runner
+        run: cmake --build build-san --target fbsampler-tests sfz-fuzz-replay --parallel
+
+      - name: Run tests under sanitizers
+        # ad6_guard_negative re-runs a nested CMake configure that inherits the
+        # sanitizer CMAKE_*_FLAGS and fails for unrelated reasons; it is a
+        # configure-time guard with no runtime code, so sanitizers add nothing.
+        # It still runs on all three regular matrix legs.
+        run: ctest --test-dir build-san --output-on-failure -E ad6_guard_negative

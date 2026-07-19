@@ -2,3 +2,7 @@
 # without this, Windows checkouts convert LF -> CRLF and silently break the
 # comparison (invisible in a text diff, but a real byte mismatch).
 tests/golden/*.txt text eol=lf
+tests/golden/sfz/*.txt text eol=lf
+tests/golden/sfz/*.sfz text eol=lf
+tests/golden/sfz/*.inc text eol=lf
+tests/fuzz/sfz/corpus/* -text

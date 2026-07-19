@@ -40,9 +40,11 @@ InstrumentModel makeReferenceModel()
     region.tuningCents = 0.1f;
     region.gainDb = -0.0f;
     region.pan = -1.0f;
+    region.positionUnit = SamplePositionUnit::Frames;
+    region.offset = 0.0;
     region.loopEnabled = true;
-    region.loopStartSeconds = 0.1f;
-    region.loopEndSeconds = 1.0f;
+    region.loopStart = 4410.0;
+    region.loopEnd = 44100.0;
     region.amplitudeEnvelope.attackSeconds = 0.01f;
     region.amplitudeEnvelope.sustainLevel = 0.8f;
 
@@ -64,19 +66,6 @@ InstrumentModel makeReferenceModel()
     return model;
 }
 
-bool modelsEqual(const InstrumentModel& a, const InstrumentModel& b)
-{
-    return serializeModel(a) == serializeModel(b);
-}
-
-std::string readFile(const std::string& path)
-{
-    std::ifstream file(path, std::ios::binary);
-    std::ostringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
-}
-
 bool bitsEqual(float a, float b)
 {
     std::uint32_t ba;
@@ -84,6 +73,74 @@ bool bitsEqual(float a, float b)
     std::memcpy(&ba, &a, sizeof(ba));
     std::memcpy(&bb, &b, sizeof(bb));
     return ba == bb;
+}
+
+bool bitsEqual(double a, double b)
+{
+    std::uint64_t ba;
+    std::uint64_t bb;
+    std::memcpy(&ba, &a, sizeof(ba));
+    std::memcpy(&bb, &b, sizeof(bb));
+    return ba == bb;
+}
+
+// Field-wise, bit-exact equality. Deliberately NOT implemented by comparing
+// serializeModel() output: that would be circular — a field dropped
+// symmetrically by both serializeModel() and parseModel() would be invisible.
+bool modelsEqual(const InstrumentModel& a, const InstrumentModel& b)
+{
+    if (a.schemaVersion != b.schemaVersion || a.name != b.name
+        || a.regions.size() != b.regions.size() || a.controls.size() != b.controls.size()) {
+        return false;
+    }
+    for (std::size_t i = 0; i < a.regions.size(); ++i) {
+        const auto& ra = a.regions[i];
+        const auto& rb = b.regions[i];
+        if (ra.sampleFile != rb.sampleFile || ra.loKey != rb.loKey || ra.hiKey != rb.hiKey
+            || ra.loVelocity != rb.loVelocity || ra.hiVelocity != rb.hiVelocity
+            || ra.rootKey != rb.rootKey || !bitsEqual(ra.tuningCents, rb.tuningCents)
+            || !bitsEqual(ra.gainDb, rb.gainDb) || !bitsEqual(ra.pan, rb.pan)
+            || ra.positionUnit != rb.positionUnit
+            || !bitsEqual(ra.offset, rb.offset) || ra.loopEnabled != rb.loopEnabled
+            || !bitsEqual(ra.loopStart, rb.loopStart)
+            || !bitsEqual(ra.loopEnd, rb.loopEnd)
+            || !bitsEqual(ra.amplitudeEnvelope.delaySeconds, rb.amplitudeEnvelope.delaySeconds)
+            || !bitsEqual(ra.amplitudeEnvelope.attackSeconds, rb.amplitudeEnvelope.attackSeconds)
+            || !bitsEqual(ra.amplitudeEnvelope.holdSeconds, rb.amplitudeEnvelope.holdSeconds)
+            || !bitsEqual(ra.amplitudeEnvelope.decaySeconds, rb.amplitudeEnvelope.decaySeconds)
+            || !bitsEqual(ra.amplitudeEnvelope.sustainLevel, rb.amplitudeEnvelope.sustainLevel)
+            || !bitsEqual(ra.amplitudeEnvelope.releaseSeconds, rb.amplitudeEnvelope.releaseSeconds)
+            || ra.modMatrix.size() != rb.modMatrix.size()) {
+            return false;
+        }
+        for (std::size_t j = 0; j < ra.modMatrix.size(); ++j) {
+            const auto& ma = ra.modMatrix[j];
+            const auto& mb = rb.modMatrix[j];
+            if (ma.sourceControlId != mb.sourceControlId || ma.source.kind != mb.source.kind
+                || ma.source.ccNumber != mb.source.ccNumber || ma.target != mb.target
+                || !bitsEqual(ma.depth, mb.depth) || !bitsEqual(ma.curve, mb.curve)) {
+                return false;
+            }
+        }
+    }
+    for (std::size_t i = 0; i < a.controls.size(); ++i) {
+        const auto& ca = a.controls[i];
+        const auto& cb = b.controls[i];
+        if (ca.id != cb.id || ca.displayName != cb.displayName
+            || ca.accessibleName != cb.accessibleName) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::string readFile(const std::string& path)
+{
+    std::ifstream file(path, std::ios::binary);
+    REQUIRE(file.is_open()); // fail loudly, not as an empty-string mismatch
+    std::ostringstream ss;
+    ss << file.rdbuf();
+    return ss.str();
 }
 
 } // namespace
@@ -110,7 +167,7 @@ TEST_CASE("serialize -> parse -> serialize is byte-identical", "[model][serializ
 TEST_CASE("serialized output starts with the schema version and uses \\n endings only", "[model][serialize]")
 {
     const auto text = serializeModel(makeReferenceModel());
-    REQUIRE(text.rfind("schema_version=1\n", 0) == 0);
+    REQUIRE(text.rfind("schema_version=2\n", 0) == 0);
     REQUIRE(text.find('\r') == std::string::npos);
 }
 
@@ -126,6 +183,64 @@ TEST_CASE("parseModel rejects malformed input", "[model][serialize]")
     InstrumentModel model;
     REQUIRE_FALSE(parseModel("not a valid line without equals\n", model));
     REQUIRE_FALSE(parseModel("", model));
+}
+
+TEST_CASE("parseModel is strict, never silently defaulting", "[model][serialize]")
+{
+    const auto reference = serializeModel(makeReferenceModel());
+    InstrumentModel model;
+
+    SECTION("truncated input is rejected")
+    {
+        const auto truncated = reference.substr(0, reference.size() / 2);
+        REQUIRE_FALSE(parseModel(truncated, model));
+    }
+    SECTION("numeric garbage is rejected, not parsed as 0")
+    {
+        auto text = reference;
+        const std::string needle = "region[0].pan=-1";
+        text.replace(text.find(needle), needle.size(), "region[0].pan=garbage");
+        REQUIRE_FALSE(parseModel(text, model));
+    }
+    SECTION("unknown enum token is rejected, not coerced to a default")
+    {
+        auto text = reference;
+        const std::string needle = "region[0].mod[0].target=Pan";
+        text.replace(text.find(needle), needle.size(), "region[0].mod[0].target=Filter");
+        REQUIRE_FALSE(parseModel(text, model));
+    }
+    SECTION("non-canonical bool is rejected")
+    {
+        auto text = reference;
+        const std::string needle = "region[0].loop_enabled=1";
+        text.replace(text.find(needle), needle.size(), "region[0].loop_enabled=true");
+        REQUIRE_FALSE(parseModel(text, model));
+    }
+    SECTION("duplicate key is rejected")
+    {
+        REQUIRE_FALSE(parseModel(reference + "name=second\n", model));
+    }
+    SECTION("unknown stray key is rejected")
+    {
+        REQUIRE_FALSE(parseModel(reference + "region[9].pan=0\n", model));
+    }
+    SECTION("non-finite float tokens are rejected")
+    {
+        auto text = reference;
+        const std::string needle = "region[0].tuning_cents=0.1";
+        text.replace(text.find(needle), needle.size(), "region[0].tuning_cents=nan");
+        REQUIRE_FALSE(parseModel(text, model));
+
+        text = reference;
+        const std::string needle2 = "region[0].loop_end=44100";
+        text.replace(text.find(needle2), needle2.size(), "region[0].loop_end=inf");
+        REQUIRE_FALSE(parseModel(text, model));
+    }
+    SECTION("negative or absurd counts are rejected before allocation")
+    {
+        REQUIRE_FALSE(parseModel("schema_version=1\nname=x\nregion_count=-1\ncontrol_count=0\n", model));
+        REQUIRE_FALSE(parseModel("schema_version=1\nname=x\nregion_count=99999999999\ncontrol_count=0\n", model));
+    }
 }
 
 // Float determinism is the hard part of AC2 (Dev Notes): denormals, negative

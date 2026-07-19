@@ -1,0 +1,6 @@
+// Loop points, start offset and the full amplitude envelope.
+<region> sample=samples\pad.wav
+  loop_mode=loop_continuous loop_start=44100 loop_end=88200 offset=22050
+  ampeg_delay=0.25 ampeg_attack=0.01 ampeg_hold=0.1 ampeg_decay=0.2
+  ampeg_sustain=80 ampeg_release=0.5
+<region> sample=samples\hit.wav loop_mode=one_shot

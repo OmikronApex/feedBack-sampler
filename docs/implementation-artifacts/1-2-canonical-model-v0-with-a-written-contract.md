@@ -4,7 +4,7 @@ baseline_commit: 957bbfd3d5047f6bf20e5000566da6603f40f7c3
 
 # Story 1.2: Canonical model v0 with a written contract
 
-Status: review
+Status: done
 
 ## Story
 
@@ -40,6 +40,20 @@ so that every frontend lowers into one verifiable representation (AD-11).
 - [x] Task 5: CI proof (AC: 1, 2)
   - [x] All tests run in the Story-1.1 CI matrix on all three platforms; the cross-platform byte-stability test is the tripwire — green on windows/macos/linux (run 29619314765) after fixing the recursion bug, CRT mismatch, and CRLF golden-file corruption (see Debug Log)
 
+### Review Findings
+
+- [x] [Review][Patch] (high) NaN passes validation for most float fields — every range check (`pan`, `offsetSeconds`, `sustainLevel`, all envelope times, `mod.curve`, loop bounds) uses comparisons that are false for NaN; finiteness is only checked for `gainDb`, `tuningCents`, `mod.depth`. A NaN-riddled model validates clean into the audio path. Add finiteness checks (new `*_not_finite` codes + SPEC.md validation list) [core/model/validate.cpp:24-78]
+- [x] [Review][Patch] (medium) MIDI-range fields accept 128–255 — `loKey`/`hiKey`/`rootKey`/velocities/`ccNumber` are `uint8_t` with only `lo <= hi` checked; `rootKey=200`, `ccNumber=200` validate clean though SPEC calls them MIDI values. Shared spec+code gap: add range codes to SPEC.md and validate.cpp [core/model/validate.cpp:43-51]
+- [x] [Review][Patch] (medium) `parseModel` accepts malformed input — missing per-field keys silently keep defaults (truncated file parses as success), `parseFloat` ignores `from_chars` errors (`pan=garbage` → 0.0), unknown enum tokens coerce to `Velocity`/`Gain`, duplicate keys last-wins, non-canonical bools → false, throwing `stoi`/`stoul` + blanket `catch(...)` in an exception-free core. Contradicts `serialize.h` "returns false on malformed input". Make the parser strict (require all fields, checked `from_chars` for ints/floats, reject unknown enum/bool tokens, reject duplicates) [core/model/serialize.cpp:172-258]
+- [x] [Review][Patch] (low) Unbounded counts drive allocation — `region_count=-1` wraps via `stoul` to 2^64−1 before `resize`; huge `mod_count` is a memory-exhaustion vector. Cap counts sanely and reject negative/junk-suffixed integers [core/model/serialize.cpp:202-243]
+- [x] [Review][Patch] (low) `escape()`/`unescape()` don't handle `\r` — a model name containing CR emits a raw CR, breaking the "always `\n` endings" invariant and the golden test's no-CR assertion. Escape as `\r` [core/model/serialize.cpp:12-45]
+- [x] [Review][Patch] (low) Round-trip equality is circular — `modelsEqual(a,b)` compares `serializeModel(a) == serializeModel(b)`, so a field dropped symmetrically by both serialize and parse is undetectable. Add a field-wise `operator==` (or per-field comparison) [tests/golden/model_golden_test.cpp:66-69]
+- [x] [Review][Patch] (low) `readFile` never checks `is_open()` — a missing golden file fails as an inscrutable empty-string mismatch instead of "file not found" [tests/golden/model_golden_test.cpp:71-77]
+- [x] [Review][Patch] (low) Story doc says "15 diagnostic codes"; SPEC/code/tests define 16 — fix Change Log + Completion Notes wording [docs/implementation-artifacts/1-2-canonical-model-v0-with-a-written-contract.md:60,100]
+- [x] [Review][Patch] (low) CI VST3 locate step: `-maxdepth` after `-iname` (positional-option pitfall) and `head -n1` silently picks an arbitrary bundle if multiple `.vst3` artifacts exist — reorder options and fail on count != 1 [.github/workflows/ci.yml "Locate VST3 artifact"]
+- [x] [Review][Patch] (low) SPEC.md's normative reference points to gitignored `build/_deps/sfizz-src/...` which doesn't exist in a fresh checkout — cite the pinned sfizz version/upstream path instead [core/model/SPEC.md:11-13]
+- [x] [Review][Patch] (low) AD-6 negative test reuses persistent `ad6_guard_negative_build` dir; a stale `CMakeCache.txt` can change behavior between runs — clean or `--fresh` configure [tests/CMakeLists.txt:24-31]
+
 ## Dev Notes
 
 - **AD-11 is the whole point:** the model is a *versioned written contract*, not a code convention. Two frontends must not be able to disagree about defaults or units while both "passing". The validation suite is the conformance gate every frontend (Stories 1.3, 2.1, 4.1) must pass.
@@ -57,7 +71,8 @@ so that every frontend lowers into one verifiable representation (AD-11).
 
 ### Change Log
 
-- 2026-07-17: Story 1.2 implementation — SPEC.md v0, model types, validation suite (15 diagnostic codes), deterministic golden-file serialization, tests wired into the existing CI matrix. Not locally verified in-session (no working C++ toolchain in the sandbox); pushed for real CI verification instead.
+- 2026-07-17: Story 1.2 implementation — SPEC.md v0, model types, validation suite (16 diagnostic codes), deterministic golden-file serialization, tests wired into the existing CI matrix. Not locally verified in-session (no working C++ toolchain in the sandbox); pushed for real CI verification instead.
+- 2026-07-18: Adversarial code review (3 parallel layers) — no AC violations; 11 patch findings applied: NaN-proof range checks in `validate()` (all range codes now assert finite-and-in-range), 3 new MIDI-range diagnostic codes (`region.key_out_of_midi_range`, `region.velocity_out_of_midi_range`, `region.mod_cc_out_of_midi_range`; 19 codes total), strict `parseModel` (all fields required exactly once, checked `from_chars`, exact enum/bool tokens, count cap 65536, duplicate/unknown keys rejected, no throwing conversions), `\r` escaping, field-wise `modelsEqual`, `readFile` open check, CI VST3 locate hardened (fail on count != 1), AD-6 fixture `--fresh` configure, SPEC.md sfizz reference fixed, doc code-count corrected. Golden reference file unchanged (no `\r`/format impact). **Not yet re-verified by CI** (no local toolchain, same as initial implementation) — push and confirm the matrix is green.
 - 2026-07-17: CI iterations to green — fixed a recursive `writeLine(bool)` overload (UB, silently dropped a serialized field), a vendored-sfizz-vs-project MSVC CRT mismatch (`LNK2038`), and Windows `core.autocrlf` corrupting the golden file's line endings (`.gitattributes` added). Windows/macOS/Linux all green (run 29619314765). Status → review.
 
 ## References
@@ -97,7 +112,7 @@ claude-sonnet-5 (Claude Code)
 - `core/model/SPEC.md`: v0 written contract — units, defaults, schema version, region/envelope/mod-matrix/control-map field tables, validation code list, serialization format.
 - Model types (`core/include/fbsampler/model.h`): `InstrumentModel`, `Region`, `EnvelopeADSR`, `ModSource`/`ModSourceKind`/`ModTarget`/`ModMatrixEntry`, `ControlMapEntry`; plain std-only data, namespace `fbsampler`.
 - `core/include/fbsampler/diagnostic.h`: `Severity`, `SourceLocation`, `Diagnostic`.
-- `validate()` (`core/model/validate.cpp` + `core/include/fbsampler/validate.h`): 15 diagnostic codes covering schema version, control-id presence/uniqueness, and per-region range/finiteness/loop/envelope/mod-matrix checks including referential integrity against the control map.
+- `validate()` (`core/model/validate.cpp` + `core/include/fbsampler/validate.h`): 19 diagnostic codes (16 at initial implementation, 3 MIDI-range codes added in review) covering schema version, control-id presence/uniqueness, and per-region range/finiteness/MIDI-range/loop/envelope/mod-matrix checks including referential integrity against the control map. All range checks are NaN-proof (assert in-range rather than test out-of-range).
 - `serializeModel()`/`parseModel()` (`core/model/serialize.cpp` + `core/include/fbsampler/serialize.h`): deterministic `key=value` text dump, fixed field order, `std::to_chars`/`from_chars` floats, `\n`-only line endings, string escaping for `\` and newline.
 - Tests: `tests/model_validate_test.cpp` (valid instance + one test per diagnostic code + a multi-violation test), `tests/golden/model_golden_test.cpp` (determinism, round-trip byte-identity, checked-in golden snapshot compare, malformed-input rejection, bit-exact round-trip for tricky floats including denormals and negative zero).
 - Wired into the existing Story-1.1 CI matrix with no CI file changes: new sources added to `sampler-core` in `core/CMakeLists.txt`; new test files added to the existing `fbsampler-tests` Catch2 binary in `tests/CMakeLists.txt` (auto-discovered via `catch_discover_tests`, already run by `ctest` in `.github/workflows/ci.yml`).

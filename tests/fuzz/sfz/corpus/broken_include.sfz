@@ -1,0 +1,2 @@
+#include "other.sfz"
+<region> sample=a.wav

@@ -31,10 +31,11 @@ InstrumentModel makeValidModel()
     region.tuningCents = 0.0f;
     region.gainDb = 0.0f;
     region.pan = 0.0f;
-    region.offsetSeconds = 0.0f;
+    region.positionUnit = SamplePositionUnit::Frames;
+    region.offset = 0.0;
     region.loopEnabled = true;
-    region.loopStartSeconds = 0.1f;
-    region.loopEndSeconds = 1.0f;
+    region.loopStart = 4410.0;
+    region.loopEnd = 44100.0;
     region.amplitudeEnvelope.sustainLevel = 1.0f;
 
     ModMatrixEntry mod;
@@ -132,15 +133,25 @@ TEST_CASE("non-finite tuning is rejected", "[model][validate]")
 TEST_CASE("negative offset is rejected", "[model][validate]")
 {
     auto model = makeValidModel();
-    model.regions.front().offsetSeconds = -0.5f;
+    model.regions.front().offset = -0.5;
     REQUIRE(hasCode(validate(model), "region.offset_negative"));
 }
 
 TEST_CASE("invalid loop range is rejected", "[model][validate]")
 {
     auto model = makeValidModel();
-    model.regions.front().loopStartSeconds = 1.0f;
-    model.regions.front().loopEndSeconds = 0.5f;
+    model.regions.front().loopStart = 44100.0;
+    model.regions.front().loopEnd = 4410.0;
+    REQUIRE(hasCode(validate(model), "region.loop_range_invalid"));
+}
+
+TEST_CASE("non-finite loop bounds are rejected even when the loop is disabled", "[model][validate]")
+{
+    // A NaN bound must not lie dormant in a disabled loop and detonate when
+    // the loop is later enabled.
+    auto model = makeValidModel();
+    model.regions.front().loopEnabled = false;
+    model.regions.front().loopStart = std::numeric_limits<double>::quiet_NaN();
     REQUIRE(hasCode(validate(model), "region.loop_range_invalid"));
 }
 
@@ -177,6 +188,78 @@ TEST_CASE("mod matrix referencing an unknown control is rejected", "[model][vali
     auto model = makeValidModel();
     model.regions.front().modMatrix.front().sourceControlId = "does-not-exist";
     REQUIRE(hasCode(validate(model), "region.mod_source_unknown_control"));
+}
+
+TEST_CASE("out-of-MIDI-range key fields are rejected", "[model][validate]")
+{
+    auto model = makeValidModel();
+    model.regions.front().hiKey = 200;
+    model.regions.front().rootKey = 128;
+    REQUIRE(hasCode(validate(model), "region.key_out_of_midi_range"));
+}
+
+TEST_CASE("out-of-MIDI-range velocity fields are rejected", "[model][validate]")
+{
+    auto model = makeValidModel();
+    model.regions.front().hiVelocity = 255;
+    REQUIRE(hasCode(validate(model), "region.velocity_out_of_midi_range"));
+}
+
+TEST_CASE("out-of-MIDI-range CC number is rejected", "[model][validate]")
+{
+    auto model = makeValidModel();
+    model.regions.front().modMatrix.front().source.ccNumber = 200;
+    REQUIRE(hasCode(validate(model), "region.mod_cc_out_of_midi_range"));
+}
+
+// NaN compares false against every bound, so naive out-of-range checks
+// (v < lo || v > hi) let it through. Each range check must assert in-range.
+TEST_CASE("NaN fails range-constrained fields, not just *_not_finite ones", "[model][validate]")
+{
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+
+    SECTION("pan")
+    {
+        auto model = makeValidModel();
+        model.regions.front().pan = nan;
+        REQUIRE(hasCode(validate(model), "region.pan_out_of_range"));
+    }
+    SECTION("offset")
+    {
+        auto model = makeValidModel();
+        model.regions.front().offset = nan;
+        REQUIRE(hasCode(validate(model), "region.offset_negative"));
+    }
+    SECTION("loop bounds")
+    {
+        auto model = makeValidModel();
+        model.regions.front().loopEnd = nan;
+        REQUIRE(hasCode(validate(model), "region.loop_range_invalid"));
+    }
+    SECTION("infinite loop end")
+    {
+        auto model = makeValidModel();
+        model.regions.front().loopEnd = std::numeric_limits<double>::infinity();
+        REQUIRE(hasCode(validate(model), "region.loop_range_invalid"));
+    }
+    SECTION("envelope time")
+    {
+        auto model = makeValidModel();
+        model.regions.front().amplitudeEnvelope.attackSeconds = nan;
+        REQUIRE(hasCode(validate(model), "region.envelope_time_negative"));
+    }
+    SECTION("envelope sustain")
+    {
+        auto model = makeValidModel();
+        model.regions.front().amplitudeEnvelope.sustainLevel = nan;
+        REQUIRE(hasCode(validate(model), "region.envelope_sustain_out_of_range"));
+    }
+    SECTION("mod curve")
+    {
+        auto model = makeValidModel();
+        model.regions.front().modMatrix.front().curve = nan;
+        REQUIRE(hasCode(validate(model), "region.mod_curve_out_of_range"));
+    }
 }
 
 TEST_CASE("multiple violations are all reported, not just the first", "[model][validate]")

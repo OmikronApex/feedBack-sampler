@@ -7,7 +7,17 @@
 namespace fbsampler {
 
 /// Schema version stamped into every serialized model artifact. See SPEC.md.
-constexpr int kModelSchemaVersion = 1;
+constexpr int kModelSchemaVersion = 2;
+
+/// Unit of a region's sample-position fields (offset / loop points).
+/// Frontends record positions exactly as the source format expresses them;
+/// the engine converts at bind time, when the sample file's real rate is
+/// known (Story 1.4). Frontends never open sample files (AD-2), so a
+/// frame-based format must not guess a rate to fake seconds.
+enum class SamplePositionUnit {
+    Frames,  // sample frames within the referenced file
+    Seconds,
+};
 
 enum class ModSourceKind {
     Cc,       // MIDI CC number (ModSource::ccNumber)
@@ -59,11 +69,12 @@ struct Region {
     float gainDb = 0.0f;
     float pan = 0.0f; // normalized -1..1
 
-    float offsetSeconds = 0.0f;
+    SamplePositionUnit positionUnit = SamplePositionUnit::Frames;
+    double offset = 0.0; // in positionUnit
 
     bool loopEnabled = false;
-    float loopStartSeconds = 0.0f;
-    float loopEndSeconds = 0.0f;
+    double loopStart = 0.0; // in positionUnit
+    double loopEnd = 0.0;   // in positionUnit
 
     EnvelopeADSR amplitudeEnvelope;
 

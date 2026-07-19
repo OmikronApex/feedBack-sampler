@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-17
-last_updated: 2026-07-17
+last_updated: 2026-07-19
 project: feedBack-sampler
 project_key: NOKEY
 tracking_system: file-system
@@ -51,8 +51,8 @@ development_status:
   # Epic 1: First Sound — play an SFZ instrument in a DAW
   epic-1: in-progress
   1-1-buildable-skeleton-on-three-platforms: done
-  1-2-canonical-model-v0-with-a-written-contract: review
-  1-3-sfz-frontend-lowers-real-instruments: ready-for-dev
+  1-2-canonical-model-v0-with-a-written-contract: done
+  1-3-sfz-frontend-lowers-real-instruments: done
   1-4-the-engine-makes-sound: ready-for-dev
   1-5-play-it-live-in-a-daw: ready-for-dev
   1-6-the-corpus-starts-measuring: ready-for-dev

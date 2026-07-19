@@ -1,0 +1,4 @@
+<control> default_path=samples/ label_cc74=Cutoff
+<global> volume=-3
+<group> lokey=24
+<region> sample=a.wav key=c4 loop_mode=loop_continuous loop_start=100 loop_end=2000 ampeg_attack=0.01 ampeg_sustain=80

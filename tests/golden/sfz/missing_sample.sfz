@@ -1,0 +1,4 @@
+// One resolvable sample, one missing: lowering must keep both regions and
+// flag only the missing one (FR-5 groundwork).
+<region> sample=samples\soft.wav
+<region> sample=samples\does_not_exist.wav
