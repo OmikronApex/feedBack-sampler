@@ -100,8 +100,11 @@ TEST_CASE("detector actually fires on violations", "[rt-safety]")
         rtcheck::resetViolations();
         {
             rtcheck::SectionGuard guard;
-            volatile int* p = new int(42); // allocation inside RT section
-            delete p;
+            // Call the allocation functions directly: a `new`/`delete` pair in
+            // one scope may legally be elided by the optimizer (seen with GCC
+            // -O2 on CI), which would silently skip the hooked operator new.
+            void* p = ::operator new(sizeof(int)); // allocation inside RT section
+            ::operator delete(p);
         }
         CHECK(rtcheck::violationCount() > 0);
         rtcheck::resetViolations();

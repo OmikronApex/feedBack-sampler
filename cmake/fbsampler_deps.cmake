@@ -17,6 +17,7 @@ set(SFIZZ_TESTS OFF CACHE BOOL "" FORCE)
 # Local patches on top of 1.2.3 (see cmake/patches/sfizz-1.2.3-fixes.patch):
 #   - SfizzConfig.cmake: don't apply ARM32 -mfpu/-mfloat-abi flags on arm64/aarch64 (macOS CI)
 #   - Voice.cpp: replace 0x1.fffffep-1 hexfloat literal (rejected by newer GCC) with 0.99999994f
+#   - Buffer.h: skip memcpy from a null oldNormalData on first resize (UBSan nonnull-attribute)
 FetchContent_Declare(sfizz
     GIT_REPOSITORY https://github.com/sfztools/sfizz.git
     GIT_TAG 4e70dc0bef53b41f2853ed46e26f5911114c92d0 # 1.2.3

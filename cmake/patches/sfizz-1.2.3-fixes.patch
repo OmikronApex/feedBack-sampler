@@ -23,6 +23,23 @@ index ff0ab5eb..147049e6 100644
          add_compile_options(-mfpu=neon)
          if(NOT ANDROID)
              add_compile_options(-mfloat-abi=hard)
+diff --git a/src/sfizz/Buffer.h b/src/sfizz/Buffer.h
+index 12345678..87654321 100644
+--- a/src/sfizz/Buffer.h
++++ b/src/sfizz/Buffer.h
+@@ -183,7 +183,10 @@
+         if (endMisalignment != 0)
+             _alignedEnd = normalEnd + Alignment - endMisalignment;
+         else
+             _alignedEnd = normalEnd;
+-
+-        std::memcpy(normalData, oldNormalData, std::min(newSize, oldSize) * sizeof(Type));
++
++        // fbsampler: guard the first-resize case (oldNormalData == nullptr,
++        // size 0) -- memcpy's args are declared nonnull and UBSan flags it.
++        if (oldNormalData != nullptr)
++            std::memcpy(normalData, oldNormalData, std::min(newSize, oldSize) * sizeof(Type));
+         std::free(oldData);
 diff --git a/src/sfizz/Voice.cpp b/src/sfizz/Voice.cpp
 index 63db7cdb..301ae4cd 100644
 --- a/src/sfizz/Voice.cpp
