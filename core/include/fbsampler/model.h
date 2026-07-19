@@ -7,7 +7,7 @@
 namespace fbsampler {
 
 /// Schema version stamped into every serialized model artifact. See SPEC.md.
-constexpr int kModelSchemaVersion = 2;
+constexpr int kModelSchemaVersion = 3;
 
 /// Unit of a region's sample-position fields (offset / loop points).
 /// Frontends record positions exactly as the source format expresses them;
@@ -68,6 +68,12 @@ struct Region {
     float tuningCents = 0.0f;
     float gainDb = 0.0f;
     float pan = 0.0f; // normalized -1..1
+
+    // Pitch-bend range in cents (SFZ bend_up/bend_down defaults). Kept in the
+    // model so bend behavior is model-expressible, never an SFZ-text backdoor
+    // (AD-1). bendDownCents is typically negative.
+    float bendUpCents = 200.0f;
+    float bendDownCents = -200.0f;
 
     SamplePositionUnit positionUnit = SamplePositionUnit::Frames;
     double offset = 0.0; // in positionUnit

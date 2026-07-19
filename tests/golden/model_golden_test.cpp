@@ -167,7 +167,7 @@ TEST_CASE("serialize -> parse -> serialize is byte-identical", "[model][serializ
 TEST_CASE("serialized output starts with the schema version and uses \\n endings only", "[model][serialize]")
 {
     const auto text = serializeModel(makeReferenceModel());
-    REQUIRE(text.rfind("schema_version=2\n", 0) == 0);
+    REQUIRE(text.rfind("schema_version=3\n", 0) == 0);
     REQUIRE(text.find('\r') == std::string::npos);
 }
 

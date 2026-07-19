@@ -53,9 +53,9 @@ development_status:
   1-1-buildable-skeleton-on-three-platforms: done
   1-2-canonical-model-v0-with-a-written-contract: done
   1-3-sfz-frontend-lowers-real-instruments: done
-  1-4-the-engine-makes-sound: ready-for-dev
-  1-5-play-it-live-in-a-daw: ready-for-dev
-  1-6-the-corpus-starts-measuring: ready-for-dev
+  1-4-the-engine-makes-sound: done
+  1-5-play-it-live-in-a-daw: done
+  1-6-the-corpus-starts-measuring: done
   epic-1-retrospective: optional
 
   # Epic 2: SoundFonts — SF2/SF3 play like the players users know

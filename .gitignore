@@ -4,3 +4,9 @@ cmake-build-*/
 .cache/
 .idea/
 compile_commands.json
+
+# Corpus assets are fetched at build time (corpus/manifest.json pins them)
+corpus/cache/
+
+# Per-session lock file from the scheduled-tasks skill
+.claude/scheduled_tasks.lock

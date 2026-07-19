@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "default_thresholds": {
+    "peak": 0.01,
+    "rms": 0.001,
+    "window_rms": 0.003
+  },
+  "entries": [
+    {
+      "id": "vcsl-baroque-soprano-recorder-staccato",
+      "format": "sfz",
+      "source": {
+        "repo": "https://github.com/sgossner/VCSL",
+        "commit": "dfcf4a4918771eee884b96ad4493de82ef84daf6",
+        "raw_base": "https://raw.githubusercontent.com/sgossner/VCSL/dfcf4a4918771eee884b96ad4493de82ef84daf6/"
+      },
+      "license": "CC0-1.0",
+      "sfz": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder - Staccato.sfz",
+      "midi": "midi/vcsl-baroque-soprano-recorder-staccato.mid",
+      "reference": "reference/vcsl-baroque-soprano-recorder-staccato.wav",
+      "golden": "golden/vcsl-baroque-soprano-recorder-staccato.expected.txt",
+      "reference_provenance": "provisional-self-capture",
+      "render_frames": 192000,
+      "rationale": "Pitched wind, PCM16 48 kHz samples; exercises offset/tune/ampeg opcodes common across the VCSL-generated corpus.",
+      "files": [
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder - Staccato.sfz",
+          "sha256": "aa62824fc6ec4c5b2ee7fbf0ee3eafec8bab4a1ce8ada3d7eaf8b3efcd08a50e"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_C4_rr1_Main.wav",
+          "sha256": "4a7069b80f20cce50c64067ec3383dc3622ef3e95e004193c6bf5b8e867b25f9"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_D4_rr1_Main.wav",
+          "sha256": "214cc490ba75da1582aa688c9ad14d1d748cd23074ca3ee5ba9936bf942b7903"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_E4_rr1_Main.wav",
+          "sha256": "fd9828141d595466b49ad55a541681a1ca5aafffb9edfe964ceb27297f439e6e"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_F#4_rr1_Main.wav",
+          "sha256": "7dc83851ad26e4fe8453dd5757f080d584a9ed9818b6512f6becafd6f9ab23ab"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_G#4_rr1_Main.wav",
+          "sha256": "d46ff87282781f328c64e572ed700475411ffc6125eedb65f563be3a62382022"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_A#4_rr1_Main.wav",
+          "sha256": "82dfb60dd22df20639995e6ec6cbf10b5c199f99695d6c41b31a40cb052509ab"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_C5_rr1_Main.wav",
+          "sha256": "b563a3e15f3ce5622d9d7975ac6463f1022202bf095d005e3c50e3951b4f702e"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_D5_rr1_Main.wav",
+          "sha256": "5691dc7ed0aa16ed18d80d157571330b75a42f0255f6292f8355823ce4f74971"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_E5_rr1_Main.wav",
+          "sha256": "700b7636e9b75d74d86f7833b76f116b2fe8ce7b79d9d54ecd99ffbd96ec7e59"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_F#5_rr1_Main.wav",
+          "sha256": "195967452ffc371c33d1db7b2648d5b032f78e00e2bb4b81efc16ed0b384ad97"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_G5_rr1_Main.wav",
+          "sha256": "95ca87580607f7d1eb0c22cd29ad6704dfcb801ec8125f3ebc5be66cc6e75677"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Baroque Soprano Recorder/Staccato/SopRecorder_Stac_A#5_rr1_Main.wav",
+          "sha256": "07626f961a9f51bd2f2a311fbe9bf75bbec773482efe8153ffbc9cccc2fc4159"
+        }
+      ]
+    },
+    {
+      "id": "vcsl-ocarina-small-staccato",
+      "format": "sfz",
+      "source": {
+        "repo": "https://github.com/sgossner/VCSL",
+        "commit": "dfcf4a4918771eee884b96ad4493de82ef84daf6",
+        "raw_base": "https://raw.githubusercontent.com/sgossner/VCSL/dfcf4a4918771eee884b96ad4493de82ef84daf6/"
+      },
+      "license": "CC0-1.0",
+      "sfz": "Aerophones/Edge-blown Aerophones/Ocarina, Small - Staccato.sfz",
+      "midi": "midi/vcsl-ocarina-small-staccato.mid",
+      "reference": "reference/vcsl-ocarina-small-staccato.wav",
+      "golden": "golden/vcsl-ocarina-small-staccato.expected.txt",
+      "reference_provenance": "provisional-self-capture",
+      "render_frames": 192000,
+      "rationale": "Pitched wind with PCM24 44.1 kHz samples; exercises bit-depth and sample-rate conversion paths.",
+      "files": [
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small - Staccato.sfz",
+          "sha256": "2e3de138916efb000d21473330dc416380a54ce160f8e6f6b88ce65e0c822be1"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_A4_staccato0.wav",
+          "sha256": "71b61fb90046eccb294c5f8f79ed726cccf089b6660053f423d75bad551f2bec"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_B4_staccato0.wav",
+          "sha256": "1fd5a52dd6b9f58f9904bc8bea4f981d90aff861c715106b3ff15de1330faf47"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_D5_staccato0.wav",
+          "sha256": "b25c98787093536ced6966d1c79787bcbdb85bd90ceecdf605cfc18dbb90d8dd"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_D#5_staccato0.wav",
+          "sha256": "773da30dcfb61daf20b05fd01f6b859e6794746534d68fc52b333682856012aa"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_E5_staccato0.wav",
+          "sha256": "df7ef947f5ff127d4ba23209102df3eea6f33af4c9c14e0c2cc86685e26f7b10"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_F5_staccato0.wav",
+          "sha256": "329c8d1e948dc37f89b9441b5b5f919035f56b00f7d25199f7d11b1eb4ea02a3"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_F#5_staccato0.wav",
+          "sha256": "94506e2773d8ac9c938f0c312f48a924936926027f62ef2bb9d466e4c4431c83"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_G5_staccato0.wav",
+          "sha256": "41189da9c4f6eeb3659cddd59c58d18dd24d06442010d075dedcd82a2d5442e2"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_G#5_staccato0.wav",
+          "sha256": "a3f97032e6518e5e8c2e88faa8c35eaa52ae9f20df9b26aa8e586df86d66593f"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_A5_staccato0.wav",
+          "sha256": "b656718e31455af7ed309863ece16654cd0543e40f173207c479e2c6ad226f69"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_A#5_staccato0.wav",
+          "sha256": "0e9a5ec38f113ebafac418e46d715647d19ab9d2af3f455a9ec59f71c4c55c40"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_B5_staccato0.wav",
+          "sha256": "da82f2f4ab00824521824b2d00afca97037ba921e10cc4b9c25eca50b2b30b92"
+        },
+        {
+          "path": "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato/ocarina_C6_staccato0.wav",
+          "sha256": "ced23176a738f87b2a99e0759f4c7f16ae28df9db63b213bb163994fa8f9935a"
+        }
+      ]
+    },
+    {
+      "id": "vcsl-claves",
+      "format": "sfz",
+      "source": {
+        "repo": "https://github.com/sgossner/VCSL",
+        "commit": "dfcf4a4918771eee884b96ad4493de82ef84daf6",
+        "raw_base": "https://raw.githubusercontent.com/sgossner/VCSL/dfcf4a4918771eee884b96ad4493de82ef84daf6/"
+      },
+      "license": "CC0-1.0",
+      "sfz": "Idiophones/Struck Idiophones/Claves.sfz",
+      "midi": "midi/vcsl-claves.mid",
+      "reference": "reference/vcsl-claves.wav",
+      "golden": "golden/vcsl-claves.expected.txt",
+      "reference_provenance": "provisional-self-capture",
+      "render_frames": 192000,
+      "rationale": "Unpitched percussion with three lovel/hivel velocity layers; exercises velocity-layer selection and long ampeg_release tails.",
+      "files": [
+        {
+          "path": "Idiophones/Struck Idiophones/Claves.sfz",
+          "sha256": "fb4487a8bd71f9fea599b1696dc37fb874d2fccd66e3ba193bcada13da3abddd"
+        },
+        {
+          "path": "Idiophones/Struck Idiophones/Claves/Claves1_Hit_v1_rr1_Mid.wav",
+          "sha256": "19379cc794b9e50d4dc55200238e27091bedab63b7370eb625490c7a96631b34"
+        },
+        {
+          "path": "Idiophones/Struck Idiophones/Claves/Claves1_Hit_v2_rr1_Mid.wav",
+          "sha256": "bcabe27330761309eb4b4f6207e6e3b4be59815df86449ac05bfb9b81f19efc9"
+        },
+        {
+          "path": "Idiophones/Struck Idiophones/Claves/Claves1_Hit_v3_rr1_Mid.wav",
+          "sha256": "12285f65ed125f4140d1e8a86b2d6a08bf3283b7bf30c10d68290b8e8230a927"
+        },
+        {
+          "path": "Idiophones/Struck Idiophones/Claves/Claves2_Hit_v1_rr1_Mid.wav",
+          "sha256": "06c7c797fcbb624de0522b27f4b8aeab5acd85fabee99c38a0da145b127adf5b"
+        },
+        {
+          "path": "Idiophones/Struck Idiophones/Claves/Claves2_Hit_v2_rr1_Mid.wav",
+          "sha256": "37849406e124df98de59f74ad0a1a621ea1ee8151bcf6dcc9981462db4ba88ef"
+        },
+        {
+          "path": "Idiophones/Struck Idiophones/Claves/Claves2_Hit_v3_rr1_Mid.wav",
+          "sha256": "04954891896d00559d4b59ef468d9f1f51a5c42cb23de6f08af8e8eaaf764a8a"
+        }
+      ]
+    }
+  ]
+}

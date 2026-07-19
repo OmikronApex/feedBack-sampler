@@ -1,0 +1,10 @@
+// Story 1.4 seed render-regression instrument.
+// Exercises: two velocity layers (soft/loud), a continuous loop with an
+// offset, and a full amplitude envelope with an audible release tail.
+<region> sample=samples/soft.wav lokey=48 hikey=72 lovel=1 hivel=63
+  pitch_keycenter=60 ampeg_attack=0.005 ampeg_release=0.2
+<region> sample=samples/loud.wav lokey=48 hikey=72 lovel=64 hivel=127
+  pitch_keycenter=60 ampeg_attack=0.005 ampeg_release=0.2 volume=-2
+<region> sample=samples/pad.wav lokey=36 hikey=36 pitch_keycenter=36
+  offset=200 loop_mode=loop_continuous loop_start=1000 loop_end=22000
+  ampeg_attack=0.01 ampeg_decay=0.3 ampeg_sustain=60 ampeg_release=0.4

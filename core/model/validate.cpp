@@ -72,6 +72,11 @@ void validateRegion(const Region& region, const std::unordered_set<std::string>&
     if (!isFinite(region.tuningCents)) {
         addError(out, "region.tuning_not_finite", "Region tuningCents must be finite");
     }
+    if (!inRange(region.bendUpCents, -9600.0f, 9600.0f)
+        || !inRange(region.bendDownCents, -9600.0f, 9600.0f)) {
+        addError(out, "region.bend_range_out_of_range",
+            "Region bend range must be finite and within [-9600, 9600] cents");
+    }
     if (!(std::isfinite(region.offset) && region.offset >= 0.0)) {
         addError(out, "region.offset_negative", "Region offset must be finite and >= 0");
     }

@@ -47,7 +47,14 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       - name: Test
-        run: ctest --test-dir build -C Release --output-on-failure
+        shell: bash
+        # xvfb on Linux: the plugin-shell test binary links juce_gui_basics.
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a ctest --test-dir build -C Release --output-on-failure
+          else
+            ctest --test-dir build -C Release --output-on-failure
+          fi
 
       - name: Locate VST3 artifact
         id: vst3
@@ -113,7 +120,7 @@ jobs:
           -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all"
 
       - name: Build tests and fuzz runner
-        run: cmake --build build-san --target fbsampler-tests sfz-fuzz-replay --parallel
+        run: cmake --build build-san --target fbsampler-tests fbsampler-render-tests fbsampler-plugin-tests sfz-fuzz-replay --parallel
 
       - name: Run tests under sanitizers
         # ad6_guard_negative re-runs a nested CMake configure that inherits the
@@ -121,3 +128,48 @@ jobs:
         # configure-time guard with no runtime code, so sanitizers add nothing.
         # It still runs on all three regular matrix legs.
         run: ctest --test-dir build-san --output-on-failure -E ad6_guard_negative
+
+  # Story 1.6 (FR-6, NFR-5, AD-10): the fidelity corpus. Renders every
+  # corpus/manifest.json entry through the headless engine and diffs against
+  # the checked-in reference captures; a rendering change fails this job with
+  # the per-library report in the log and as an artifact. Assets are fetched
+  # at pinned commits + sha256 and cached on the manifest hash.
+  corpus:
+    name: corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxcomposite-dev \
+            libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev \
+            libxrender-dev libfreetype6-dev libfontconfig1-dev \
+            libgl1-mesa-dev libcurl4-openssl-dev
+
+      - name: Restore corpus asset cache
+        uses: actions/cache@v4
+        with:
+          path: corpus/cache
+          key: corpus-${{ hashFiles('corpus/manifest.json') }}
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build corpus renderer
+        run: cmake --build build --config Release --target fbsampler-corpus-render --parallel
+
+      - name: Run corpus suite
+        run: >
+          python3 corpus/tools/run_corpus.py
+          --tool build/tests/fbsampler-corpus-render
+          --report corpus-report.json
+
+      - name: Upload corpus report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corpus-report
+          path: corpus-report.json
+          if-no-files-found: ignore

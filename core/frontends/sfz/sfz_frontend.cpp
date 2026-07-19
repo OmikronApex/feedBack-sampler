@@ -423,6 +423,12 @@ private:
             } else if (name == "tune") {
                 tuneCents = clampWarn(op, parseFloatOr(op, tuneCents),
                                       -kTuneMaxCents, kTuneMaxCents);
+            } else if (name == "bend_up" || name == "bendup") {
+                region.bendUpCents = clampWarn(op, parseFloatOr(op, region.bendUpCents),
+                                               -kTuneMaxCents, kTuneMaxCents);
+            } else if (name == "bend_down" || name == "benddown") {
+                region.bendDownCents = clampWarn(op, parseFloatOr(op, region.bendDownCents),
+                                                 -kTuneMaxCents, kTuneMaxCents);
             } else if (name == "volume") {
                 region.gainDb = parseFloatOr(op, region.gainDb);
             } else if (name == "pan") {

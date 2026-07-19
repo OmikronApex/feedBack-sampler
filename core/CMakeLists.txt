@@ -11,6 +11,11 @@ add_library(sampler-core STATIC
     model/validate.cpp
     model/serialize.cpp
     frontends/sfz/sfz_frontend.cpp
+    pool/wav_reader.cpp
+    pool/all_ram_pool.cpp
+    engine/rt_check.cpp
+    engine/model_to_sfz.cpp
+    engine/engine.cpp
 )
 
 target_include_directories(sampler-core

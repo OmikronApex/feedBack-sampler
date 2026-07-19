@@ -268,3 +268,29 @@ TEST_CASE("empty and pathological inputs never crash or throw", "[sfz]")
             CHECK_FALSE(result.model.has_value());
     }
 }
+
+TEST_CASE("bend_up/bend_down lower into the model bend range", "[sfz]")
+{
+    const auto result = lowerSfzText(
+        "<region> sample=a.wav bend_up=1200 bend_down=-1200\n"
+        "<region> sample=b.wav\n");
+    REQUIRE(result.model.has_value());
+    REQUIRE(result.model->regions.size() == 2);
+    CHECK(result.model->regions[0].bendUpCents == 1200.0f);
+    CHECK(result.model->regions[0].bendDownCents == -1200.0f);
+    // SFZ defaults when unspecified.
+    CHECK(result.model->regions[1].bendUpCents == 200.0f);
+    CHECK(result.model->regions[1].bendDownCents == -200.0f);
+}
+
+TEST_CASE("out-of-range bend values are clamped with a warning", "[sfz]")
+{
+    const auto result = lowerSfzText("<region> sample=a.wav bend_up=20000\n");
+    REQUIRE(result.model.has_value());
+    CHECK(result.model->regions[0].bendUpCents == 9600.0f);
+    bool clamped = false;
+    for (const auto& d : result.diagnostics)
+        if (d.code == "sfz.value_clamped")
+            clamped = true;
+    CHECK(clamped);
+}

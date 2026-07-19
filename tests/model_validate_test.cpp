@@ -272,3 +272,18 @@ TEST_CASE("multiple violations are all reported, not just the first", "[model][v
     REQUIRE(hasCode(diagnostics, "region.key_range_invalid"));
     REQUIRE(hasCode(diagnostics, "region.pan_out_of_range"));
 }
+
+TEST_CASE("bend range outside [-9600, 9600] cents is rejected", "[model][validate]")
+{
+    auto model = makeValidModel();
+    model.regions.front().bendUpCents = 9601.0f;
+    REQUIRE(hasCode(validate(model), "region.bend_range_out_of_range"));
+
+    model = makeValidModel();
+    model.regions.front().bendDownCents = -9601.0f;
+    REQUIRE(hasCode(validate(model), "region.bend_range_out_of_range"));
+
+    model = makeValidModel();
+    model.regions.front().bendUpCents = std::numeric_limits<float>::quiet_NaN();
+    REQUIRE(hasCode(validate(model), "region.bend_range_out_of_range"));
+}

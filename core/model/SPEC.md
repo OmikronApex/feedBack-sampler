@@ -1,6 +1,6 @@
 # Canonical Model Spec — v0
 
-**Schema version: 2** (`fbsampler::kModelSchemaVersion`, stamped into every serialized artifact)
+**Schema version: 3** (`fbsampler::kModelSchemaVersion`, stamped into every serialized artifact)
 
 This is the written contract for `fbsampler::InstrumentModel` (AD-11). Every frontend (SFZ,
 SoundFont, Decent Sampler, ...) lowers its own format into this one representation; the engine
@@ -61,6 +61,8 @@ them later must not change the meaning of any v0 field.
 | `tuningCents`          | `float`    | 0       | fine tune, cents |
 | `gainDb`               | `float`    | 0       | region gain, dB |
 | `pan`                  | `float`    | 0       | normalized -1 (full left) .. 1 (full right) |
+| `bendUpCents`          | `float`    | 200     | pitch-bend range at full bend up, cents (SFZ `bend_up` default) |
+| `bendDownCents`        | `float`    | -200    | pitch-bend range at full bend down, cents (typically negative) |
 | `positionUnit`         | `SamplePositionUnit` | `Frames` | unit of `offset` / `loopStart` / `loopEnd` |
 | `offset`               | `double`   | 0       | start offset into the sample, in `positionUnit` |
 | `loopEnabled`          | `bool`     | false   | |
@@ -137,6 +139,7 @@ against every bound, so checks assert in-range rather than test out-of-range):
 - `region.pan_out_of_range` — `pan` not finite or outside `[-1, 1]`
 - `region.gain_not_finite` — `gainDb` is NaN or infinite
 - `region.tuning_not_finite` — `tuningCents` is NaN or infinite
+- `region.bend_range_out_of_range` — `bendUpCents` or `bendDownCents` not finite or outside `[-9600, 9600]`
 - `region.offset_negative` — `offset` not finite or `< 0`
 - `region.loop_range_invalid` — a loop bound is not finite or `< 0` (checked even when
   `loopEnabled` is false, so a bad bound cannot lie dormant until the loop is enabled), or

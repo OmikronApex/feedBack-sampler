@@ -217,6 +217,8 @@ std::string serializeModel(const InstrumentModel& model)
         writeLine(out, p + "tuning_cents", r.tuningCents);
         writeLine(out, p + "gain_db", r.gainDb);
         writeLine(out, p + "pan", r.pan);
+        writeLine(out, p + "bend_up_cents", r.bendUpCents);
+        writeLine(out, p + "bend_down_cents", r.bendDownCents);
         writeLine(out, p + "position_unit", std::string(toString(r.positionUnit)));
         writeLine(out, p + "offset", r.offset);
         writeLine(out, p + "loop_enabled", r.loopEnabled);
@@ -305,6 +307,8 @@ try {
         if (!take(p + "tuning_cents", v) || !parseFloat(v, r.tuningCents)) return false;
         if (!take(p + "gain_db", v) || !parseFloat(v, r.gainDb)) return false;
         if (!take(p + "pan", v) || !parseFloat(v, r.pan)) return false;
+        if (!take(p + "bend_up_cents", v) || !parseFloat(v, r.bendUpCents)) return false;
+        if (!take(p + "bend_down_cents", v) || !parseFloat(v, r.bendDownCents)) return false;
         if (!take(p + "position_unit", v) || !parseSamplePositionUnit(v, r.positionUnit)) return false;
         if (!take(p + "offset", v) || !parseDouble(v, r.offset)) return false;
         if (!take(p + "loop_enabled", v) || !parseBool(v, r.loopEnabled)) return false;

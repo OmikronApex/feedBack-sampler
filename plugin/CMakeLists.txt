@@ -16,6 +16,7 @@ juce_add_plugin(feedback-sampler-plugin
 target_sources(feedback-sampler-plugin
     PRIVATE
         plugin_processor.cpp
+        plugin_editor.cpp
 )
 
 target_compile_definitions(feedback-sampler-plugin
