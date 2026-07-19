@@ -2,7 +2,19 @@ diff --git a/cmake/SfizzConfig.cmake b/cmake/SfizzConfig.cmake
 index ff0ab5eb..147049e6 100644
 --- a/cmake/SfizzConfig.cmake
 +++ b/cmake/SfizzConfig.cmake
-@@ -99,7 +99,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+@@ -51,7 +51,10 @@ endif()
+
+ # Set macOS compatibility level
+ if(APPLE)
+-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9")
++    # fbsampler: 10.15+ so ghc/fs_std.hpp maps its `fs` alias to
++    # std::filesystem (the header falls back to ghc::filesystem below 10.15),
++    # matching the C++17 consumers that link sfizz::parser.
++    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
+ endif()
+
+ # If using C++17, check if aligned-new has runtime support on the platform;
+@@ -99,7 +102,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
      gw_warn(-Wall -Wextra -Wno-multichar -Werror=return-type)
      if(PROJECT_SYSTEM_PROCESSOR MATCHES "(i.86|x86_64)")
          add_compile_options(-msse2)
