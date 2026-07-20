@@ -63,14 +63,29 @@ CorpusEntryResult runCorpusEntry(const std::string& instrumentPath,
     result.loaded = true;
 
     // Golden lowering snapshot (Story 1.6 Task 5): lets lowering drift and
-    // rendering drift be attributed separately.
+    // rendering drift be attributed separately. Sample paths are made
+    // relative to the instrument's directory (separators normalized) so the
+    // snapshot is byte-identical across machines and platforms — absolute
+    // cache paths must never reach the committed golden.
     if (!writeGoldenPath.empty()) {
+        auto goldenModel = *lowered.model;
+        std::string dir = instrumentPath;
+        std::replace(dir.begin(), dir.end(), '\\', '/');
+        const auto slash = dir.find_last_of('/');
+        dir = slash == std::string::npos ? std::string() : dir.substr(0, slash + 1);
+        for (auto& region : goldenModel.regions) {
+            std::string& s = region.sampleFile;
+            std::replace(s.begin(), s.end(), '\\', '/');
+            const auto pos = s.find(dir);
+            if (!dir.empty() && pos != std::string::npos)
+                s.erase(pos, dir.size());
+        }
         std::ofstream out(writeGoldenPath, std::ios::binary);
         if (!out.is_open()) {
             result.error = "cannot write golden snapshot: " + writeGoldenPath;
             return result;
         }
-        out << serializeModel(*lowered.model);
+        out << serializeModel(goldenModel);
     }
 
     RenderSettings settings;

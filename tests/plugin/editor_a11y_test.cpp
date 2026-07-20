@@ -101,8 +101,11 @@ TEST_CASE("focus order reaches every operable surface control", "[editor][a11y]"
     CHECK(reached("Settings"));
     CHECK(reached("Search libraries"));
     CHECK(reached("Library list"));
-    CHECK(reached("Instrument view"));
     CHECK(reached("Filter: SFZ format"));
+    // The main area shows the instrument view — or, on a machine with no
+    // configured folders and an empty index (fresh CI), the empty state
+    // with its Add-folder button. Either way it must be reachable.
+    CHECK((reached("Instrument view") || reached("Add a library folder")));
 }
 
 TEST_CASE("no showing focusable component lacks an accessible title",
