@@ -52,9 +52,13 @@ InstrumentModel makeReferenceModel()
     mod.sourceControlId = "cc74";
     mod.source.kind = ModSourceKind::Cc;
     mod.source.ccNumber = 74;
+    mod.source.maxToMin = true;
+    mod.source.bipolar = true;
+    mod.source.curve = ModCurveType::Concave;
+    mod.amountSource.kind = ModSourceKind::ChannelPressure;
+    mod.amountSource.curve = ModCurveType::Switch;
     mod.target = ModTarget::Pan;
     mod.depth = 0.5f;
-    mod.curve = 0.25f;
     region.modMatrix.push_back(mod);
 
     model.regions.push_back(region);
@@ -116,9 +120,15 @@ bool modelsEqual(const InstrumentModel& a, const InstrumentModel& b)
         for (std::size_t j = 0; j < ra.modMatrix.size(); ++j) {
             const auto& ma = ra.modMatrix[j];
             const auto& mb = rb.modMatrix[j];
-            if (ma.sourceControlId != mb.sourceControlId || ma.source.kind != mb.source.kind
-                || ma.source.ccNumber != mb.source.ccNumber || ma.target != mb.target
-                || !bitsEqual(ma.depth, mb.depth) || !bitsEqual(ma.curve, mb.curve)) {
+            const auto sourcesEqual = [](const ModSource& sa, const ModSource& sb) {
+                return sa.kind == sb.kind && sa.ccNumber == sb.ccNumber
+                    && sa.maxToMin == sb.maxToMin && sa.bipolar == sb.bipolar
+                    && sa.curve == sb.curve;
+            };
+            if (ma.sourceControlId != mb.sourceControlId
+                || !sourcesEqual(ma.source, mb.source)
+                || !sourcesEqual(ma.amountSource, mb.amountSource)
+                || ma.target != mb.target || !bitsEqual(ma.depth, mb.depth)) {
                 return false;
             }
         }
@@ -167,7 +177,7 @@ TEST_CASE("serialize -> parse -> serialize is byte-identical", "[model][serializ
 TEST_CASE("serialized output starts with the schema version and uses \\n endings only", "[model][serialize]")
 {
     const auto text = serializeModel(makeReferenceModel());
-    REQUIRE(text.rfind("schema_version=3\n", 0) == 0);
+    REQUIRE(text.rfind("schema_version=5\n", 0) == 0);
     REQUIRE(text.find('\r') == std::string::npos);
 }
 
@@ -206,7 +216,7 @@ TEST_CASE("parseModel is strict, never silently defaulting", "[model][serialize]
     {
         auto text = reference;
         const std::string needle = "region[0].mod[0].target=Pan";
-        text.replace(text.find(needle), needle.size(), "region[0].mod[0].target=Filter");
+        text.replace(text.find(needle), needle.size(), "region[0].mod[0].target=Wobble");
         REQUIRE_FALSE(parseModel(text, model));
     }
     SECTION("non-canonical bool is rejected")

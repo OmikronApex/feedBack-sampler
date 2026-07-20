@@ -25,14 +25,19 @@ Epics 2 and 4 only extend the manifest (SF2/SF3, Decent Sampler).
   `fbsampler-corpus-render` per entry, writes `corpus-report.json` +
   human summary. `tools/make_midi.py` regenerates the MIDI fixtures.
 
-## Manifest schema (v1)
+## Manifest schema (v2)
 
-Per entry: `id`, `format`, `source` (repo + pinned commit + raw base URL),
-`license` (SPDX, mandatory), `sfz` (entry-point path in the source repo),
-`midi` / `reference` / `golden` (paths in this directory),
-`reference_provenance`, `render_frames`, `rationale` (why this entry is in
-the corpus — entries are weighted by real-library usage), `files`
-(every fetched file with its sha256), and optional `thresholds` overrides.
+Per entry: `id`, `format` (`sfz` | `sf2` | `sf3`), `source` (repo + pinned
+commit + raw base URL), `license` (SPDX or recorded license conclusion,
+mandatory), the entry-point path (`sfz` for SFZ entries, `file` for
+soundfont containers), soundfont entries additionally carry `bank` +
+`program` (ONE preset rendered per entry), `midi` / `reference` / `golden`
+(paths in this directory), `reference_provenance`, `render_frames`,
+`rationale`, `files` (every fetched file with its sha256), optional legacy
+`thresholds` overrides, optional `threshold_override` (numeric overrides +
+mandatory `rationale` string — schema v2), and optional
+`expected_fail: <issue ref>` (a tracked, diagnosed gap: the entry reports
+FAIL but only the per-format PRD gate decides the job).
 
 Adding an entry: pick a freely-licensed library (CC0 / CC-BY /
 GPL-compatible — the `license` field is mandatory and must permit
@@ -78,6 +83,62 @@ Regenerating after an *intentional* engine change:
         --update-references --update-goldens
 
 then inspect and commit the diff.
+
+### FluidSynth capture procedure (SF2, Story 2.2)
+
+For SoundFont behavior the oracle is **FluidSynth**, which runs headless, so
+captures are scripted and re-runnable — but still captured once and checked
+in (CI never runs FluidSynth). The Story-2.2 oracle fixtures live under
+`tests/render/fixtures/sf2/` (kept out of the corpus until Story 2.5 folds
+SF2 entries into the manifest):
+
+1. FluidSynth **2.5.6** (Windows x64 cpp11 build; any platform's 2.5.x
+   produces byte-comparable fast renders for these fixtures).
+2. `fluidsynth -ni -g 1 -r 44100 -o synth.gain=1 -F <out.wav> oracle.sf2
+   <fixture>.mid` — fast offline render, no realtime, chorus/reverb at
+   defaults (the fixture routes nothing to effect sends).
+3. No normalization, no trimming; PCM16 output as FluidSynth writes it.
+4. `tests/render/fixtures/sf2/make_oracle_refs.py` performs 1–3 end to end;
+   `tests/render/sf2_oracle_test.cpp` diffs behavioral metrics (normalized
+   velocity curve, CC-sweep gain trajectory, f0 under pitch bend) against
+   the captures with per-test thresholds and rationale in comments.
+
+### FluidSynth capture procedure (corpus slice, Story 2.5)
+
+The SF2/SF3 corpus entries carry **true oracle captures**
+(`reference_provenance: fluidsynth-2.5.6`), produced by
+`corpus/tools/capture_sf_references.py`:
+
+- FluidSynth **2.5.6** (pin hard — minor versions change rendering)
+- 48 kHz stereo, fast render, gain 1.0
+- **reverb and chorus disabled** (`synth.reverb.active=no`,
+  `synth.chorus.active=no`): our engine has no reverb/chorus, so diffing
+  against effected output would measure the effects, not the sampler
+- output trimmed/padded to the entry's exact `render_frames`, stored PCM16
+  stereo (uniform with the Epic-1 reference format)
+- the fixture MIDI embeds bank-select + program-change so FluidSynth plays
+  the same preset the runner lowers by the manifest's `bank`/`program`
+  (our engine ignores program changes — the preset is fixed at lowering);
+  bank-128 entries ride MIDI channel 10
+
+Threshold overrides for these entries are **calibrated to the measured
+cross-engine diff** (schema v2 `threshold_override` with mandatory
+`rationale`): sfizz and FluidSynth legitimately differ in interpolation,
+envelope curve shape, and the engine's tracked 2.2 gaps (filter,
+vibrato LFO). The thresholds pin the measured fidelity level so regressions
+are visible, and tighten as gaps close. The PRD §6 gate (100% load /
+>=90% render-pass per format) is asserted by `run_corpus.py` on every run.
+
+**Weight decision (1.6 review deferral, resolved):** per-format percentages
+remain unweighted — at the current corpus scale a `weight` field would have
+no consumer; revisit when a format slice grows past ~10 entries.
+
+**Repo size note:** the soundfont slice adds ~6 MB of references + ~4 MB of
+lowering goldens (checked in). GeneralUser GS (~31 MB) and
+MuseScore_General.sf3 (~40 MB) are fetch-at-build, cached by the existing
+manifest-hash `actions/cache`; a cold CI run downloads ~70 MB once. If Epic
+4's Decent Sampler slice pushes checked-in payload further, move references
+to Git LFS then (single documented switch).
 
 ## Diff metrics and NFR-5 thresholds
 

@@ -44,7 +44,7 @@ InstrumentModel makeValidModel()
     mod.source.ccNumber = 74;
     mod.target = ModTarget::Gain;
     mod.depth = -6.0f;
-    mod.curve = 0.5f;
+    mod.source.curve = ModCurveType::Concave;
     region.modMatrix.push_back(mod);
 
     model.regions.push_back(region);
@@ -176,11 +176,20 @@ TEST_CASE("non-finite mod depth is rejected", "[model][validate]")
     REQUIRE(hasCode(validate(model), "region.mod_depth_not_finite"));
 }
 
-TEST_CASE("out-of-range mod curve is rejected", "[model][validate]")
+TEST_CASE("a primary mod source of None is rejected", "[model][validate]")
 {
     auto model = makeValidModel();
-    model.regions.front().modMatrix.front().curve = 2.0f;
-    REQUIRE(hasCode(validate(model), "region.mod_curve_out_of_range"));
+    model.regions.front().modMatrix.front().source.kind = ModSourceKind::None;
+    REQUIRE(hasCode(validate(model), "region.mod_source_none"));
+}
+
+TEST_CASE("an out-of-range amount-source CC is rejected", "[model][validate]")
+{
+    auto model = makeValidModel();
+    auto& mod = model.regions.front().modMatrix.front();
+    mod.amountSource.kind = ModSourceKind::Cc;
+    mod.amountSource.ccNumber = 200;
+    REQUIRE(hasCode(validate(model), "region.mod_cc_out_of_midi_range"));
 }
 
 TEST_CASE("mod matrix referencing an unknown control is rejected", "[model][validate]")
@@ -254,11 +263,11 @@ TEST_CASE("NaN fails range-constrained fields, not just *_not_finite ones", "[mo
         model.regions.front().amplitudeEnvelope.sustainLevel = nan;
         REQUIRE(hasCode(validate(model), "region.envelope_sustain_out_of_range"));
     }
-    SECTION("mod curve")
+    SECTION("mod depth")
     {
         auto model = makeValidModel();
-        model.regions.front().modMatrix.front().curve = nan;
-        REQUIRE(hasCode(validate(model), "region.mod_curve_out_of_range"));
+        model.regions.front().modMatrix.front().depth = nan;
+        REQUIRE(hasCode(validate(model), "region.mod_depth_not_finite"));
     }
 }
 

@@ -93,6 +93,13 @@ struct Engine::Impl {
     // the old pointer before the swap and is still using it.
     std::atomic<EngineSnapshot*> current{nullptr};
     std::atomic<std::uint64_t> renderEpoch{0};
+    // Story 3.4: live voice count for the header readout. Written by the
+    // audio thread after each rendered block, read from the message thread.
+    std::atomic<int> activeVoices{0};
+    // Story 3.5: voice limit applied to each newly built snapshot's synth.
+    // sfizz's setNumVoices resizes internals, so it is only ever called on
+    // the snapshot under construction (control thread), never the live one.
+    int voiceLimit = 64; // sfizz default
     std::unique_ptr<EngineSnapshot> retiredPending;
     detail::CheckedMutex controlMutex;
 
@@ -162,15 +169,21 @@ std::vector<Diagnostic> Engine::load(const InstrumentModel& model,
     // Bind sample references through the pool (AD-2): pin every referenced
     // sample and learn its real rate for seconds->frames conversion.
     std::vector<double> regionRates(model.regions.size(), 0.0);
+    std::vector<SampleHandle> regionHandles(model.regions.size(), kInvalidSampleHandle);
     bool bindFailed = false;
     for (std::size_t i = 0; i < model.regions.size(); ++i) {
-        const std::string path = joinPath(instrumentRoot, model.regions[i].sampleFile);
+        // Container-sample URIs (sf2://...) carry the full container path
+        // already; only plain relative references join the instrument root.
+        const std::string& ref = model.regions[i].sampleFile;
+        const std::string path = ref.rfind("sf2://", 0) == 0 ? ref
+                                                             : joinPath(instrumentRoot, ref);
         SampleHandle h = pool->acquire(path, &diagnostics);
         if (h == kInvalidSampleHandle) {
             bindFailed = true;
             continue;
         }
         snapshot->pinnedHandles.push_back(h);
+        regionHandles[i] = h;
         SampleInfo info;
         if (pool->info(h, info))
             regionRates[i] = info.sampleRate;
@@ -182,11 +195,13 @@ std::vector<Diagnostic> Engine::load(const InstrumentModel& model,
     // FilePool, so sample data is resident twice (pool + sfizz). Accepted for
     // v0 and tracked in deferred-work.md; Epic 5 unifies residency behind the
     // fbsampler pool when streaming lands.
-    const std::string sfzText = detail::modelToSfzText(model, regionRates, &diagnostics);
+    const std::string sfzText = detail::modelToSfzText(model, regionRates, &diagnostics,
+                                                       pool.get(), &regionHandles);
 
     auto synth = std::make_unique<sfz::Sfizz>();
     synth->setSampleRate(static_cast<float>(impl_->sampleRate));
     synth->setSamplesPerBlock(impl_->maxBlockFrames);
+    synth->setNumVoices(impl_->voiceLimit);
     // All-RAM v0: force full preload so the audio thread never waits on
     // streaming. Not uint32 max: sfizz adds each region's offset to the
     // preload size internally, and the uint32 sum wrapping around leaves
@@ -253,6 +268,19 @@ void Engine::process(const EngineEvent* events, std::size_t numEvents,
     }
 
     s->synth->renderBlock(out, numFrames, 1);
+    impl_->activeVoices.store(s->synth->getNumActiveVoices(),
+                              std::memory_order_relaxed);
+}
+
+void Engine::setVoiceLimit(int maxVoices)
+{
+    std::lock_guard<detail::CheckedMutex> lock(impl_->controlMutex);
+    impl_->voiceLimit = maxVoices < 1 ? 1 : (maxVoices > 256 ? 256 : maxVoices);
+}
+
+int Engine::activeVoiceCount() const noexcept
+{
+    return impl_->activeVoices.load(std::memory_order_relaxed);
 }
 
 } // namespace fbsampler

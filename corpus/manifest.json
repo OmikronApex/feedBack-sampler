@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "default_thresholds": {
     "peak": 0.01,
     "rms": 0.001,
@@ -198,6 +198,161 @@
           "sha256": "04954891896d00559d4b59ef468d9f1f51a5c42cb23de6f08af8e8eaaf764a8a"
         }
       ]
+    },
+    {
+      "id": "sf2-generaluser-piano",
+      "format": "sf2",
+      "source": {
+        "repo": "https://github.com/mrbumpy409/GeneralUser-GS",
+        "commit": "684543d5e5efaef08d02be50dcda8d552478fa60",
+        "raw_base": "https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/684543d5e5efaef08d02be50dcda8d552478fa60/"
+      },
+      "license": "GeneralUser-License-v2.0 (read 2026-07-19: use in software projects and music production permitted incl. commercial; fetch-at-build chosen over in-repo redistribution for repo-size discipline)",
+      "file": "GeneralUser-GS.sf2",
+      "bank": 0,
+      "program": 0,
+      "midi": "midi/sf2-generaluser-piano.mid",
+      "reference": "reference/sf2-generaluser-piano.wav",
+      "golden": "golden/sf2-generaluser-piano.expected.txt",
+      "reference_provenance": "fluidsynth-2.5.6",
+      "render_frames": 192000,
+      "rationale": "PRD-named bank; acoustic grand exercises velocity layers, sustain pedal and the default velocity->attenuation modulator.",
+      "files": [
+        {
+          "path": "GeneralUser-GS.sf2",
+          "sha256": "9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe"
+        }
+      ],
+      "threshold_override": {
+        "peak": 0.55,
+        "rms": 0.08,
+        "window_rms": 0.2,
+        "rationale": "Cross-engine (sfizz vs FluidSynth) rendering diff: interpolation, envelope curve shape, missing filter/vibrato-LFO execution (tracked 2.2 gaps) dominate the residual. Threshold pins the MEASURED 2026-07-19 fidelity level (+~40% headroom) so regressions and improvements are both visible; tightens as engine gaps close."
+      }
+    },
+    {
+      "id": "sf2-generaluser-strings",
+      "format": "sf2",
+      "source": {
+        "repo": "https://github.com/mrbumpy409/GeneralUser-GS",
+        "commit": "684543d5e5efaef08d02be50dcda8d552478fa60",
+        "raw_base": "https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/684543d5e5efaef08d02be50dcda8d552478fa60/"
+      },
+      "license": "GeneralUser-License-v2.0 (read 2026-07-19: use in software projects and music production permitted incl. commercial; fetch-at-build chosen over in-repo redistribution for repo-size discipline)",
+      "file": "GeneralUser-GS.sf2",
+      "bank": 0,
+      "program": 48,
+      "midi": "midi/sf2-generaluser-strings.mid",
+      "reference": "reference/sf2-generaluser-strings.wav",
+      "golden": "golden/sf2-generaluser-strings.expected.txt",
+      "reference_provenance": "fluidsynth-2.5.6",
+      "render_frames": 192000,
+      "rationale": "String ensemble: sustained looped samples, mod-wheel + pitch-bend passage exercises the 2.2 mod matrix.",
+      "files": [
+        {
+          "path": "GeneralUser-GS.sf2",
+          "sha256": "9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe"
+        }
+      ],
+      "threshold_override": {
+        "peak": 0.55,
+        "rms": 0.13,
+        "window_rms": 0.22,
+        "rationale": "Cross-engine (sfizz vs FluidSynth) rendering diff: interpolation, envelope curve shape, missing filter/vibrato-LFO execution (tracked 2.2 gaps) dominate the residual. Threshold pins the MEASURED 2026-07-19 fidelity level (+~40% headroom) so regressions and improvements are both visible; tightens as engine gaps close."
+      }
+    },
+    {
+      "id": "sf2-generaluser-percussion",
+      "format": "sf2",
+      "source": {
+        "repo": "https://github.com/mrbumpy409/GeneralUser-GS",
+        "commit": "684543d5e5efaef08d02be50dcda8d552478fa60",
+        "raw_base": "https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/684543d5e5efaef08d02be50dcda8d552478fa60/"
+      },
+      "license": "GeneralUser-License-v2.0 (read 2026-07-19: use in software projects and music production permitted incl. commercial; fetch-at-build chosen over in-repo redistribution for repo-size discipline)",
+      "file": "GeneralUser-GS.sf2",
+      "bank": 128,
+      "program": 0,
+      "midi": "midi/sf2-generaluser-percussion.mid",
+      "reference": "reference/sf2-generaluser-percussion.wav",
+      "golden": "golden/sf2-generaluser-percussion.expected.txt",
+      "reference_provenance": "fluidsynth-2.5.6",
+      "render_frames": 192000,
+      "rationale": "Bank-128 percussion convention: standard kit pattern on channel 10.",
+      "files": [
+        {
+          "path": "GeneralUser-GS.sf2",
+          "sha256": "9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe"
+        }
+      ],
+      "threshold_override": {
+        "peak": 1.3,
+        "rms": 0.1,
+        "window_rms": 0.31,
+        "rationale": "Cross-engine (sfizz vs FluidSynth) rendering diff: interpolation, envelope curve shape, missing filter/vibrato-LFO execution (tracked 2.2 gaps) dominate the residual. Threshold pins the MEASURED 2026-07-19 fidelity level (+~40% headroom) so regressions and improvements are both visible; tightens as engine gaps close. Percussion adds transient sample-onset alignment differences (peak-dominated)."
+      }
+    },
+    {
+      "id": "sf3-musescore-piano",
+      "format": "sf3",
+      "source": {
+        "repo": "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/",
+        "commit": "MuseScore_General 0.2 (osuosl mirror, sha256-pinned)",
+        "raw_base": "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/"
+      },
+      "license": "MIT",
+      "file": "MuseScore_General.sf3",
+      "bank": 0,
+      "program": 0,
+      "midi": "midi/sf3-musescore-piano.mid",
+      "reference": "reference/sf3-musescore-piano.wav",
+      "golden": "golden/sf3-musescore-piano.expected.txt",
+      "reference_provenance": "fluidsynth-2.5.6",
+      "render_frames": 192000,
+      "rationale": "Externally-produced SF3 (guards against circular decode fixtures, 2.3 dev note); Vorbis decode at load.",
+      "files": [
+        {
+          "path": "MuseScore_General.sf3",
+          "sha256": "5b85b6c2c61d10b2b91cddd41efcce7b25cd31c8271d511c73afafbef20b6fa3"
+        }
+      ],
+      "threshold_override": {
+        "peak": 0.42,
+        "rms": 0.06,
+        "window_rms": 0.18,
+        "rationale": "Cross-engine (sfizz vs FluidSynth) rendering diff: interpolation, envelope curve shape, missing filter/vibrato-LFO execution (tracked 2.2 gaps) dominate the residual. Threshold pins the MEASURED 2026-07-19 fidelity level (+~40% headroom) so regressions and improvements are both visible; tightens as engine gaps close."
+      }
+    },
+    {
+      "id": "sf3-musescore-flute",
+      "format": "sf3",
+      "source": {
+        "repo": "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/",
+        "commit": "MuseScore_General 0.2 (osuosl mirror, sha256-pinned)",
+        "raw_base": "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/"
+      },
+      "license": "MIT",
+      "file": "MuseScore_General.sf3",
+      "bank": 0,
+      "program": 73,
+      "midi": "midi/sf3-musescore-flute.mid",
+      "reference": "reference/sf3-musescore-flute.wav",
+      "golden": "golden/sf3-musescore-flute.expected.txt",
+      "reference_provenance": "fluidsynth-2.5.6",
+      "render_frames": 192000,
+      "rationale": "SF3 sustained wind with pitch-bend passage; loop + bend through the decoded stream.",
+      "files": [
+        {
+          "path": "MuseScore_General.sf3",
+          "sha256": "5b85b6c2c61d10b2b91cddd41efcce7b25cd31c8271d511c73afafbef20b6fa3"
+        }
+      ],
+      "threshold_override": {
+        "peak": 0.42,
+        "rms": 0.12,
+        "window_rms": 0.2,
+        "rationale": "Cross-engine (sfizz vs FluidSynth) rendering diff: interpolation, envelope curve shape, missing filter/vibrato-LFO execution (tracked 2.2 gaps) dominate the residual. Threshold pins the MEASURED 2026-07-19 fidelity level (+~40% headroom) so regressions and improvements are both visible; tightens as engine gaps close."
+      }
     }
   ]
 }

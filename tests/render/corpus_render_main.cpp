@@ -45,6 +45,7 @@ int usage()
 {
     std::fprintf(stderr,
                  "usage: fbsampler-corpus-render --sfz FILE --midi FILE --frames N\n"
+                 "         [--format sfz|sf2|sf3] [--bank N] [--program N]\n"
                  "         [--reference WAV] [--peak X] [--rms X] [--window-rms X]\n"
                  "         [--write-wav WAV] [--golden FILE] [--json FILE]\n");
     return 2;
@@ -55,6 +56,9 @@ int usage()
 int main(int argc, char** argv)
 {
     std::string sfz, midi, reference, writeWav, golden, jsonPath;
+    std::string format = "sfz";
+    int bank = 0;
+    int program = 0;
     std::uint64_t frames = 0;
     CorpusThresholds thresholds;
 
@@ -65,6 +69,12 @@ int main(int argc, char** argv)
             sfz = argv[++i];
         else if (arg == "--midi" && value)
             midi = argv[++i];
+        else if (arg == "--format" && value)
+            format = argv[++i];
+        else if (arg == "--bank" && value)
+            bank = static_cast<int>(std::strtol(argv[++i], nullptr, 10));
+        else if (arg == "--program" && value)
+            program = static_cast<int>(std::strtol(argv[++i], nullptr, 10));
         else if (arg == "--frames" && value)
             frames = std::strtoull(argv[++i], nullptr, 10);
         else if (arg == "--reference" && value)
@@ -87,8 +97,8 @@ int main(int argc, char** argv)
     if (sfz.empty() || midi.empty() || frames == 0)
         return usage();
 
-    const CorpusEntryResult r =
-        runCorpusEntry(sfz, midi, frames, reference, thresholds, writeWav, golden);
+    const CorpusEntryResult r = runCorpusEntry(sfz, format, bank, program, midi, frames,
+                                               reference, thresholds, writeWav, golden);
 
     std::string json = "{\n";
     auto boolField = [&](const char* name, bool v, bool comma = true) {

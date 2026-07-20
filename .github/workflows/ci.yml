@@ -120,7 +120,7 @@ jobs:
           -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all"
 
       - name: Build tests and fuzz runner
-        run: cmake --build build-san --target fbsampler-tests fbsampler-render-tests fbsampler-plugin-tests sfz-fuzz-replay --parallel
+        run: cmake --build build-san --target fbsampler-tests fbsampler-render-tests fbsampler-plugin-tests sfz-fuzz-replay sf2-fuzz-replay --parallel
 
       - name: Run tests under sanitizers
         # ad6_guard_negative re-runs a nested CMake configure that inherits the

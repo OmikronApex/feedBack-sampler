@@ -6,4 +6,15 @@ tests/golden/sfz/*.txt text eol=lf
 tests/golden/sfz/*.sfz text eol=lf
 tests/golden/sfz/*.inc text eol=lf
 tests/fuzz/sfz/corpus/* -text
+tests/golden/sf2/*.txt text eol=lf
+tests/golden/sf2/*.sf2 binary
+tests/fuzz/sf2/corpus/* binary
 cmake/patches/*.patch text eol=lf
+tests/golden/sf2/*.sf3 binary
+tests/render/fixtures/sf2/*.sf2 binary
+tests/render/fixtures/sf2/*.sf3 binary
+tests/render/fixtures/sf2/*.mid binary
+tests/render/fixtures/sf2/*.wav binary
+corpus/golden/*.txt text eol=lf
+corpus/midi/*.mid binary
+corpus/reference/*.wav binary

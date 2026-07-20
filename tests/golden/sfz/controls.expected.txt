@@ -1,4 +1,4 @@
-schema_version=3
+schema_version=5
 name=controls
 region_count=1
 region[0].sample_file=samples/soft.wav

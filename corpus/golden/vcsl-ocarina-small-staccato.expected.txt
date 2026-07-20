@@ -1,4 +1,4 @@
-schema_version=3
+schema_version=5
 name=Ocarina, Small - Staccato
 region_count=13
 region[0].sample_file=Ocarina, Small/Staccato/ocarina_A4_staccato0.wav

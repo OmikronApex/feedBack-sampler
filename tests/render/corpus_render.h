@@ -33,11 +33,16 @@ struct CorpusEntryResult {
     std::string error; // first hard failure, human-readable
 };
 
-/// Lower `sfzPath`, render the timeline in `midiPath` for `totalFrames` at
-/// 48 kHz, and diff against `referenceWavPath` (skipped when empty: the
-/// result then reports load/render status only, used by --update-references).
-/// When `writeWavPath` is non-empty the render is written there as PCM16.
-CorpusEntryResult runCorpusEntry(const std::string& sfzPath, const std::string& midiPath,
+/// Lower `instrumentPath` through the frontend selected by `format`
+/// ("sfz", or "sf2"/"sf3" with `bank`/`program` naming the preset under
+/// test — Story 2.5), render the timeline in `midiPath` for `totalFrames`
+/// at 48 kHz, and diff against `referenceWavPath` (skipped when empty: the
+/// result then reports load/render status only, used by
+/// --update-references). When `writeWavPath` is non-empty the render is
+/// written there as PCM16.
+CorpusEntryResult runCorpusEntry(const std::string& instrumentPath,
+                                 const std::string& format, int bank, int program,
+                                 const std::string& midiPath,
                                  std::uint64_t totalFrames,
                                  const std::string& referenceWavPath,
                                  const CorpusThresholds& thresholds,

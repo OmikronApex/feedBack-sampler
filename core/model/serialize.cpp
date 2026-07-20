@@ -142,18 +142,49 @@ bool parseSamplePositionUnit(const std::string& s, SamplePositionUnit& out)
 const char* toString(ModSourceKind kind)
 {
     switch (kind) {
+        case ModSourceKind::None: return "None";
         case ModSourceKind::Cc: return "Cc";
         case ModSourceKind::Velocity: return "Velocity";
         case ModSourceKind::KeyTrack: return "KeyTrack";
+        case ModSourceKind::PolyPressure: return "PolyPressure";
+        case ModSourceKind::ChannelPressure: return "ChannelPressure";
+        case ModSourceKind::PitchWheel: return "PitchWheel";
+        case ModSourceKind::PitchWheelSensitivity: return "PitchWheelSensitivity";
     }
     return "Velocity";
 }
 
 bool parseModSourceKind(const std::string& s, ModSourceKind& out)
 {
-    if (s == "Cc") out = ModSourceKind::Cc;
+    if (s == "None") out = ModSourceKind::None;
+    else if (s == "Cc") out = ModSourceKind::Cc;
     else if (s == "Velocity") out = ModSourceKind::Velocity;
     else if (s == "KeyTrack") out = ModSourceKind::KeyTrack;
+    else if (s == "PolyPressure") out = ModSourceKind::PolyPressure;
+    else if (s == "ChannelPressure") out = ModSourceKind::ChannelPressure;
+    else if (s == "PitchWheel") out = ModSourceKind::PitchWheel;
+    else if (s == "PitchWheelSensitivity") out = ModSourceKind::PitchWheelSensitivity;
+    else return false;
+    return true;
+}
+
+const char* toString(ModCurveType curve)
+{
+    switch (curve) {
+        case ModCurveType::Linear: return "Linear";
+        case ModCurveType::Concave: return "Concave";
+        case ModCurveType::Convex: return "Convex";
+        case ModCurveType::Switch: return "Switch";
+    }
+    return "Linear";
+}
+
+bool parseModCurveType(const std::string& s, ModCurveType& out)
+{
+    if (s == "Linear") out = ModCurveType::Linear;
+    else if (s == "Concave") out = ModCurveType::Concave;
+    else if (s == "Convex") out = ModCurveType::Convex;
+    else if (s == "Switch") out = ModCurveType::Switch;
     else return false;
     return true;
 }
@@ -164,6 +195,9 @@ const char* toString(ModTarget target)
         case ModTarget::Gain: return "Gain";
         case ModTarget::Pitch: return "Pitch";
         case ModTarget::Pan: return "Pan";
+        case ModTarget::FilterCutoff: return "FilterCutoff";
+        case ModTarget::ReverbSend: return "ReverbSend";
+        case ModTarget::ChorusSend: return "ChorusSend";
     }
     return "Gain";
 }
@@ -173,6 +207,9 @@ bool parseModTarget(const std::string& s, ModTarget& out)
     if (s == "Gain") out = ModTarget::Gain;
     else if (s == "Pitch") out = ModTarget::Pitch;
     else if (s == "Pan") out = ModTarget::Pan;
+    else if (s == "FilterCutoff") out = ModTarget::FilterCutoff;
+    else if (s == "ReverbSend") out = ModTarget::ReverbSend;
+    else if (s == "ChorusSend") out = ModTarget::ChorusSend;
     else return false;
     return true;
 }
@@ -238,9 +275,18 @@ std::string serializeModel(const InstrumentModel& model)
             writeLine(out, mp + "source_control_id", escape(m.sourceControlId));
             writeLine(out, mp + "source_kind", std::string(toString(m.source.kind)));
             writeLine(out, mp + "source_cc_number", static_cast<unsigned>(m.source.ccNumber));
+            writeLine(out, mp + "source_max_to_min", m.source.maxToMin);
+            writeLine(out, mp + "source_bipolar", m.source.bipolar);
+            writeLine(out, mp + "source_curve", std::string(toString(m.source.curve)));
+            writeLine(out, mp + "amount_source_kind", std::string(toString(m.amountSource.kind)));
+            writeLine(out, mp + "amount_source_cc_number",
+                      static_cast<unsigned>(m.amountSource.ccNumber));
+            writeLine(out, mp + "amount_source_max_to_min", m.amountSource.maxToMin);
+            writeLine(out, mp + "amount_source_bipolar", m.amountSource.bipolar);
+            writeLine(out, mp + "amount_source_curve",
+                      std::string(toString(m.amountSource.curve)));
             writeLine(out, mp + "target", std::string(toString(m.target)));
             writeLine(out, mp + "depth", m.depth);
-            writeLine(out, mp + "curve", m.curve);
         }
     }
 
@@ -331,9 +377,21 @@ try {
             m.sourceControlId = unescape(v);
             if (!take(mp + "source_kind", v) || !parseModSourceKind(v, m.source.kind)) return false;
             if (!take(mp + "source_cc_number", v) || !parseU8(v, m.source.ccNumber)) return false;
+            if (!take(mp + "source_max_to_min", v) || !parseBool(v, m.source.maxToMin)) return false;
+            if (!take(mp + "source_bipolar", v) || !parseBool(v, m.source.bipolar)) return false;
+            if (!take(mp + "source_curve", v) || !parseModCurveType(v, m.source.curve)) return false;
+            if (!take(mp + "amount_source_kind", v)
+                || !parseModSourceKind(v, m.amountSource.kind)) return false;
+            if (!take(mp + "amount_source_cc_number", v)
+                || !parseU8(v, m.amountSource.ccNumber)) return false;
+            if (!take(mp + "amount_source_max_to_min", v)
+                || !parseBool(v, m.amountSource.maxToMin)) return false;
+            if (!take(mp + "amount_source_bipolar", v)
+                || !parseBool(v, m.amountSource.bipolar)) return false;
+            if (!take(mp + "amount_source_curve", v)
+                || !parseModCurveType(v, m.amountSource.curve)) return false;
             if (!take(mp + "target", v) || !parseModTarget(v, m.target)) return false;
             if (!take(mp + "depth", v) || !parseFloat(v, m.depth)) return false;
-            if (!take(mp + "curve", v) || !parseFloat(v, m.curve)) return false;
         }
     }
 

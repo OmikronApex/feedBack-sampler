@@ -1,4 +1,4 @@
-schema_version=3
+schema_version=5
 name=loops_env
 region_count=2
 region[0].sample_file=samples/pad.wav

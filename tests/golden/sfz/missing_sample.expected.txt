@@ -1,4 +1,4 @@
-schema_version=3
+schema_version=5
 name=missing_sample
 region_count=2
 region[0].sample_file=samples/soft.wav

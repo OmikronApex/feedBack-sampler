@@ -1,4 +1,4 @@
-schema_version=3
+schema_version=5
 name=layers
 region_count=3
 region[0].sample_file=samples/soft.wav

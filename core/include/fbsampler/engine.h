@@ -63,6 +63,17 @@ public:
     void process(const EngineEvent* events, std::size_t numEvents,
                  float** out, std::size_t numFrames) noexcept;
 
+    /// Voice limit (AD-7 memory knob). Takes effect on the NEXT snapshot
+    /// build (load()); callers wanting a live change reload the current
+    /// model — sfizz's voice resize is not audio-thread-concurrent-safe.
+    /// Clamped to [1, 256].
+    void setVoiceLimit(int maxVoices);
+
+    /// Voices currently sounding, published by the audio thread after each
+    /// rendered block (lock-free; message-thread readout for the header).
+    /// 0 before any block renders or when no snapshot is bound.
+    int activeVoiceCount() const noexcept;
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

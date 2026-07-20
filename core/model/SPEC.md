@@ -1,6 +1,6 @@
 # Canonical Model Spec — v0
 
-**Schema version: 3** (`fbsampler::kModelSchemaVersion`, stamped into every serialized artifact)
+**Schema version: 5** (`fbsampler::kModelSchemaVersion`, stamped into every serialized artifact)
 
 This is the written contract for `fbsampler::InstrumentModel` (AD-11). Every frontend (SFZ,
 SoundFont, Decent Sampler, ...) lowers its own format into this one representation; the engine
@@ -54,7 +54,7 @@ them later must not change the meaning of any v0 field.
 
 | Field                 | Type       | Default | Notes |
 |-----------------------|------------|---------|-------|
-| `sampleFile`           | `string`   | `""`    | path relative to the instrument root; required (non-empty) |
+| `sampleFile`           | `string`   | `""`    | sample reference (see below); required (non-empty) |
 | `loKey` / `hiKey`      | `uint8_t`  | 0 / 127 | inclusive MIDI key range |
 | `loVelocity` / `hiVelocity` | `uint8_t` | 0 / 127 | inclusive MIDI velocity range |
 | `rootKey`              | `uint8_t`  | 60      | MIDI key that plays the sample at its native pitch |
@@ -70,6 +70,22 @@ them later must not change the meaning of any v0 field.
 | `amplitudeEnvelope`    | `EnvelopeADSR` | see below | |
 | `modMatrix`            | `vector<ModMatrixEntry>` | empty | regional modulation connections |
 
+#### Sample references (schema v4)
+
+`sampleFile` is either a plain path **relative to the instrument root** (schema v1–3 meaning,
+unchanged), or — since schema v4 — a **container-sample URI** of the form
+
+```
+sf2://<container-path>#<sampleIndex>
+```
+
+referencing the `<sampleIndex>`-th `shdr` sample record (0-based) embedded inside the SoundFont
+at `<container-path>`. The pool resolves both forms at `acquire()` time (AD-2: only the pool
+touches sample bytes); frontends record the reference and shdr metadata only — embedded samples
+are **never** extracted to temp files. Region sample-position fields (`offset`, loop points) for
+container references are frames **relative to the referenced sample's start**, not to the
+container's sample-data chunk.
+
 ### `EnvelopeADSR`
 
 | Field            | Type    | Default | Notes |
@@ -83,20 +99,51 @@ them later must not change the meaning of any v0 field.
 
 ### `ModSource` / `ModTarget` / `ModMatrixEntry`
 
-`ModSourceKind` is `Cc`, `Velocity`, or `KeyTrack` (reserved: further SF2 source kinds land later
-per AD-1, without changing these three). `ModSource::ccNumber` is only meaningful when
-`kind == Cc`.
+Since schema v5 the matrix carries the full SF2 modulator shape (SoundFont 2.04 §9.5):
+`output = curve(source) x curve(amountSource) x depth`, applied to `target`.
 
-`ModTarget` is `Gain` (depth in dB), `Pitch` (depth in cents), or `Pan` (depth normalized -1..1).
-Reserved: additional targets may be added later; existing target semantics never change.
+`ModSourceKind` is one of `None`, `Cc`, `Velocity`, `KeyTrack`, `PolyPressure`,
+`ChannelPressure`, `PitchWheel`, `PitchWheelSensitivity`. `None` is only legal for an
+**amount** source (it means "no scaling"); a primary source of `None` fails validation.
+`ModSource::ccNumber` is only meaningful when `kind == Cc`.
+
+#### `ModSource`
+
+| Field       | Type           | Default   | Notes |
+|-------------|----------------|-----------|-------|
+| `kind`      | `ModSourceKind`| `Velocity`| |
+| `ccNumber`  | `uint8_t`      | 0         | only when `kind == Cc` |
+| `maxToMin`  | `bool`         | false     | direction: false = min→max, true = max→min (input inverted before the curve) |
+| `bipolar`   | `bool`         | false     | polarity: false = curve output 0..1, true = -1..1 |
+| `curve`     | `ModCurveType` | `Linear`  | shape, see below |
+
+#### Curve shapes (`ModCurveType`, spec §9.5.2)
+
+With normalized input `x` in [0, 1] (after direction inversion):
+
+- `Linear`: `f(x) = x`
+- `Concave`: `f(x) = -20/96 * log10(((127 - 127x)^2) / 127^2)` clamped to [0, 1] — slow start,
+  the SF2 attenuation-controller shape (FluidSynth `fluid_conv.c` is the oracle-matching
+  reference implementation)
+- `Convex`: the mirror, `f(x) = 1 - Concave(1 - x)`
+- `Switch`: `f(x) = 0` for `x < 0.5`, `1` otherwise
+
+Bipolar maps the unipolar output `u` to `2u - 1`.
+
+`ModTarget` is `Gain` (depth in dB), `Pitch` (depth in cents), `Pan` (depth normalized -1..1),
+plus the reserved targets `FilterCutoff` (cents), `ReverbSend`, `ChorusSend` (normalized 0..1)
+which lower and serialize but which the engine does not execute yet — the engine emits a
+diagnostic when it drops one at bind time. Existing target semantics never change.
+
+#### `ModMatrixEntry`
 
 | Field               | Type         | Default              | Notes |
 |---------------------|--------------|-----------------------|-------|
-| `sourceControlId`    | `string`     | `""`                  | references a `ControlMapEntry::id`; empty means the source is a built-in (velocity/keytrack), not a mapped control |
-| `source`             | `ModSource`  | `{Velocity, 0}`       | |
+| `sourceControlId`    | `string`     | `""`                  | references a `ControlMapEntry::id`; empty means the source is a built-in, not a mapped control |
+| `source`             | `ModSource`  | `{Velocity}`          | primary source |
+| `amountSource`       | `ModSource`  | `{None}`              | secondary (amount) source; `None` = depth applied unscaled |
 | `target`             | `ModTarget`  | `Gain`                | |
 | `depth`              | `float`      | 0                     | unit depends on `target` (see above) |
-| `curve`              | `float`      | 0                     | normalized 0..1; 0 = linear |
 
 ### `ControlMapEntry`
 
@@ -147,8 +194,8 @@ against every bound, so checks assert in-range rather than test out-of-range):
 - `region.envelope_time_negative` — any of the envelope's time fields is not finite or negative
 - `region.envelope_sustain_out_of_range` — `sustainLevel` not finite or outside `[0, 1]`
 - `region.mod_depth_not_finite` — a `modMatrix` entry's `depth` is NaN or infinite
-- `region.mod_curve_out_of_range` — a `modMatrix` entry's `curve` not finite or outside `[0, 1]`
-- `region.mod_cc_out_of_midi_range` — a `modMatrix` entry's `source.ccNumber > 127` when `source.kind == Cc`
+- `region.mod_source_none` — a `modMatrix` entry's primary `source.kind` is `None`
+- `region.mod_cc_out_of_midi_range` — a `modMatrix` entry's `source.ccNumber > 127` (or `amountSource.ccNumber > 127`) when the respective `kind == Cc`
 - `region.mod_source_unknown_control` — a `modMatrix` entry's `sourceControlId` is non-empty but does not match any `controls[i].id`
 - `control.id_missing` — a `ControlMapEntry::id` is empty
 
@@ -196,3 +243,11 @@ byte-mimics other players' error handling. Concretely, for the SFZ frontend:
   (`sfz.invalid_opcode_value`) — a failed opcode never resets inherited state.
 - Numeric opcodes accept any parseable number even where the SFZ spec is stricter (e.g. a
   fractional `transpose` is honored as fractional semitones rather than rejected).
+
+For the SF2 frontend (Story 2.1) the same policy applies at the zone level: structural
+(chunk-level, SoundFont 2.04 §10) violations are `Error`s that suppress the model, but every
+structurally-parseable file lowers — out-of-range generator values are clamped
+(`sf2.value_clamped`), zones whose sample bounds fall outside the sample-data chunk are dropped
+(`sf2.sample_bounds_invalid`), unexpressible generators are per-generator warnings
+(`sf2.generator_unsupported`), and modulators are tracked as `sf2.modulator_unsupported`
+until Story 2.2.

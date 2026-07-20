@@ -41,10 +41,13 @@ def fetch_entry(entry: dict) -> str:
     whose content changed is an integrity failure, never a soft warning."""
     base = entry["source"]["raw_base"]
     entry_dir = os.path.join(CACHE, entry["id"])
+    # Schema v2: soundfont entries name their container via "file"; sfz
+    # entries keep the historical "sfz" key.
+    root_file = entry.get("file") or entry["sfz"]
     sfz_local = None
     for f in entry["files"]:
         local = os.path.join(entry_dir, *f["path"].split("/"))
-        if f["path"] == entry["sfz"]:
+        if f["path"] == root_file:
             sfz_local = local
         if os.path.exists(local) and sha256_file(local) == f["sha256"]:
             continue
@@ -60,7 +63,7 @@ def fetch_entry(entry: dict) -> str:
         with open(local, "wb") as out:
             out.write(blob)
     if sfz_local is None:
-        raise RuntimeError(f"entry {entry['id']}: sfz not listed in files[]")
+        raise RuntimeError(f"entry {entry['id']}: root file not listed in files[]")
     return sfz_local
 
 
@@ -73,8 +76,16 @@ def run_entry(tool: str, entry: dict, sfz_local: str, thresholds: dict,
 
     t = dict(thresholds)
     t.update(entry.get("thresholds", {}))
+    # Schema v2: structured per-entry override with mandatory rationale
+    # (resolves the 1.6 review deferral).
+    override = dict(entry.get("threshold_override", {}))
+    override.pop("rationale", None)
+    t.update(override)
     cmd = [tool, "--sfz", sfz_local, "--midi", midi,
            "--frames", str(entry["render_frames"]),
+           "--format", entry.get("format", "sfz"),
+           "--bank", str(entry.get("bank", 0)),
+           "--program", str(entry.get("program", 0)),
            "--peak", str(t["peak"]), "--rms", str(t["rms"]),
            "--window-rms", str(t["window_rms"]),
            "--json", json_out]
@@ -149,7 +160,7 @@ def main() -> int:
         print(f"corpus infrastructure error: {message}")
         write_infra_error_report(message)
         return 2
-    if manifest.get("schema_version") != 1:
+    if manifest.get("schema_version") not in (1, 2):
         message = f"unsupported manifest schema_version {manifest.get('schema_version')}"
         print(message)
         write_infra_error_report(message)
@@ -198,16 +209,31 @@ def main() -> int:
 
     print(f"\n{'entry':44} {'load':>5} {'render':>7} {'peak':>10} {'rms':>10} result")
     failed = False
+    expected_fail = {e["id"]: e["expected_fail"] for e in manifest["entries"]
+                     if e.get("expected_fail")}
     for r in results:
         ok = r.get("passed", False)
-        failed |= not ok
+        if not ok and r["id"] in expected_fail:
+            # Tracked, diagnosed gap (AD-1): reported, but only the per-format
+            # PRD gate below decides the job.
+            r["expected_fail"] = expected_fail[r["id"]]
+        else:
+            failed |= not ok
         print(f"{r['id']:44} {str(r.get('loaded', False)):>5} "
               f"{str(r.get('rendered', False)):>7} {r.get('peak_diff', 0):>10.3g} "
               f"{r.get('rms_diff', 0):>10.3g} {'PASS' if ok else 'FAIL'}"
               + (f"  ({r.get('error', '')})" if not ok else ""))
+    # PRD section-6 v1 gate, asserted per format (Story 2.5): 100% of the
+    # corpus loads; >=90% renders within thresholds. Percentages are
+    # deliberately UNWEIGHTED (1.6 review deferral resolved: at this corpus
+    # scale a weight field would have no consumer; revisit when a format
+    # slice grows past ~10 entries).
     for name, f in formats.items():
+        gate_ok = f["load_pct"] == 100.0 and f["render_pass_pct"] >= 90.0
         print(f"format {name}: {f['load_pct']}% load, {f['render_pass_pct']}% render-pass "
-              f"({f['passed']}/{f['total']})")
+              f"({f['passed']}/{f['total']})"
+              + ("" if gate_ok else "  << PRD gate FAILED (need 100% load, >=90% render)"))
+        failed |= not gate_ok
     print(f"report: {args.report}")
     return 1 if failed else 0
 

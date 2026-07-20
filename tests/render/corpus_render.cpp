@@ -5,6 +5,7 @@
 #include "wav_io.h"
 
 #include "fbsampler/serialize.h"
+#include "fbsampler/sf2_frontend.h"
 #include "fbsampler/sfz_frontend.h"
 #include "fbsampler/validate.h"
 
@@ -24,7 +25,9 @@ std::string dirName(const std::string& path)
 
 } // namespace
 
-CorpusEntryResult runCorpusEntry(const std::string& sfzPath, const std::string& midiPath,
+CorpusEntryResult runCorpusEntry(const std::string& instrumentPath,
+                                 const std::string& format, int bank, int program,
+                                 const std::string& midiPath,
                                  std::uint64_t totalFrames,
                                  const std::string& referenceWavPath,
                                  const CorpusThresholds& thresholds,
@@ -32,9 +35,20 @@ CorpusEntryResult runCorpusEntry(const std::string& sfzPath, const std::string& 
                                  const std::string& writeGoldenPath)
 {
     CorpusEntryResult result;
+    const std::string& sfzPath = instrumentPath;
 
-    // Lower + validate (AC 1: "100% of corpus loads" is computable from this).
-    LowerResult lowered = lowerSfzFile(sfzPath);
+    // Lower + validate (AC 1: "100% of corpus loads" is computable from
+    // this). Entry -> (frontend by format) -> render -> diff: only the
+    // frontend call is format-specific (Story 1.6 design, extended by 2.5).
+    LowerResult lowered;
+    if (format == "sf2" || format == "sf3") {
+        lowered = lowerSf2Preset(instrumentPath, bank, program);
+    } else if (format == "sfz" || format.empty()) {
+        lowered = lowerSfzFile(instrumentPath);
+    } else {
+        result.error = "unknown corpus entry format: " + format;
+        return result;
+    }
     for (const Diagnostic& d : lowered.diagnostics)
         if (d.severity == Severity::Warning)
             ++result.warningCount;

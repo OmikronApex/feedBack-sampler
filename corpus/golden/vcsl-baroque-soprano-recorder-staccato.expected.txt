@@ -1,4 +1,4 @@
-schema_version=3
+schema_version=5
 name=Baroque Soprano Recorder - Staccato
 region_count=12
 region[0].sample_file=Baroque Soprano Recorder/Staccato/SopRecorder_Stac_C4_rr1_Main.wav

@@ -1,4 +1,4 @@
-schema_version=3
+schema_version=5
 name=Claves
 region_count=6
 region[0].sample_file=Claves/Claves1_Hit_v1_rr1_Mid.wav

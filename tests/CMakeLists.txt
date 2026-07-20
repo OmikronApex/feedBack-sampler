@@ -1,9 +1,13 @@
 add_executable(fbsampler-tests
     version_test.cpp
+    config_service_test.cpp
+    library_scanner_test.cpp
     model_validate_test.cpp
     sfz_frontend_test.cpp
+    sf2_frontend_test.cpp
     golden/model_golden_test.cpp
     golden/sfz_golden_test.cpp
+    golden/sf2_golden_test.cpp
 )
 
 target_link_libraries(fbsampler-tests
@@ -36,6 +40,10 @@ add_executable(fbsampler-render-tests
     render/midi_file_test.cpp
     render/corpus_render.cpp
     render/corpus_render_test.cpp
+    render/mod_curves_test.cpp
+    render/sf2_oracle_test.cpp
+    render/sf3_render_test.cpp
+    render/sf2_preset_switch_test.cpp
 )
 
 target_link_libraries(fbsampler-render-tests
@@ -87,6 +95,22 @@ target_sources(fbsampler-plugin-tests
         plugin/plugin_processor_test.cpp
         ${CMAKE_SOURCE_DIR}/plugin/plugin_processor.cpp
         ${CMAKE_SOURCE_DIR}/plugin/plugin_editor.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/fb_look_and_feel.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/fb_knob.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/library_filter.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/library_browser_pane.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/control_card_model.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/header_bar.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/instrument_view_pane.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/settings_overlay.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/error_copy.cpp
+        ${CMAKE_SOURCE_DIR}/plugin/ui/drop_action.cpp
+        plugin/error_copy_test.cpp
+        plugin/drop_action_test.cpp
+        plugin/scan_banner_model_test.cpp
+        plugin/editor_a11y_test.cpp
+        plugin/library_filter_test.cpp
+        plugin/control_card_model_test.cpp
         render/rt_new_delete_hooks.cpp
 )
 
@@ -106,6 +130,7 @@ target_compile_definitions(fbsampler-plugin-tests
 target_link_libraries(fbsampler-plugin-tests
     PRIVATE
         sampler-core
+        fbsampler-fonts
         Catch2::Catch2WithMain
         juce::juce_audio_utils
         juce::juce_recommended_config_flags
@@ -143,6 +168,32 @@ else()
     # A parser hang must fail this one test, not stall the whole CI leg until
     # the job-level timeout (the libFuzzer variant gets this via -timeout=10).
     set_tests_properties(sfz_fuzz_replay PROPERTIES TIMEOUT 120)
+endif()
+
+# --- SF2 fuzz harness (Story 2.1, AC2) --- same contract and runner shape as
+# the SFZ harness above; replay_main.cpp is shared, only the corpus and the
+# LLVMFuzzerTestOneInput implementation differ.
+set(FBSAMPLER_SF2_FUZZ_CORPUS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/fuzz/sf2/corpus")
+
+if(FBSAMPLER_LIBFUZZER)
+    add_executable(sf2-fuzzer fuzz/sf2/sf2_fuzzer.cpp)
+    target_link_libraries(sf2-fuzzer PRIVATE sampler-core)
+    target_include_directories(sf2-fuzzer PRIVATE "${CMAKE_SOURCE_DIR}/core")
+    target_compile_options(sf2-fuzzer PRIVATE -fsanitize=fuzzer)
+    target_link_options(sf2-fuzzer PRIVATE -fsanitize=fuzzer)
+    add_test(NAME sf2_fuzz_short
+        COMMAND sf2-fuzzer -max_total_time=30 -timeout=10 "${FBSAMPLER_SF2_FUZZ_CORPUS_DIR}")
+else()
+    add_executable(sf2-fuzz-replay
+        fuzz/sf2/sf2_fuzzer.cpp
+        fuzz/sfz/replay_main.cpp
+    )
+    target_link_libraries(sf2-fuzz-replay PRIVATE sampler-core)
+    target_include_directories(sf2-fuzz-replay PRIVATE "${CMAKE_SOURCE_DIR}/core")
+    target_compile_definitions(sf2-fuzz-replay
+        PRIVATE FBSAMPLER_FUZZ_CORPUS_DIR="${FBSAMPLER_SF2_FUZZ_CORPUS_DIR}")
+    add_test(NAME sf2_fuzz_replay COMMAND sf2-fuzz-replay)
+    set_tests_properties(sf2_fuzz_replay PROPERTIES TIMEOUT 120)
 endif()
 
 # AD-6 guard negative test: proves fbsampler_assert_no_gui_modules() actually

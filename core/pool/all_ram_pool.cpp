@@ -2,6 +2,7 @@
 
 #include "../engine/checked_mutex.h"
 #include "fbsampler/detail/rt_check.h"
+#include "sf2_sample_reader.h"
 #include "wav_reader.h"
 
 #include <atomic>
@@ -75,8 +76,13 @@ public:
             return kInvalidSampleHandle;
         }
 
+        // v4 sample references: sf2:// container URIs decode through the
+        // SoundFont reader; anything else is a plain WAV path.
         detail::DecodedWav wav;
-        if (!detail::readWavFile(path, wav, diagnostics))
+        const bool ok = detail::isSf2SampleUri(path)
+            ? detail::readSf2Sample(path, wav, diagnostics)
+            : detail::readWavFile(path, wav, diagnostics);
+        if (!ok)
             return kInvalidSampleHandle;
 
         auto entry = std::make_unique<Entry>();

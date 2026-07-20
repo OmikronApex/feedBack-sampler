@@ -35,7 +35,7 @@ TEST_CASE("corpus entry: capture then re-render passes thresholds", "[corpus]")
     const std::string golden = tempPath("corpus_selftest_golden.txt");
 
     // Capture mode: no reference, write render + golden.
-    CorpusEntryResult captured = runCorpusEntry(seedInstrumentSfzPath(), seedMidiPath(),
+    CorpusEntryResult captured = runCorpusEntry(seedInstrumentSfzPath(), "sfz", 0, 0, seedMidiPath(),
                                                 kFrames, {}, CorpusThresholds{}, ref, golden);
     INFO(captured.error);
     REQUIRE(captured.loaded);
@@ -55,7 +55,7 @@ TEST_CASE("corpus entry: capture then re-render passes thresholds", "[corpus]")
 
     // Compare mode: identical render must pass the NFR-5 thresholds (the
     // only deviation is the PCM16 reference quantization floor).
-    CorpusEntryResult compared = runCorpusEntry(seedInstrumentSfzPath(), seedMidiPath(),
+    CorpusEntryResult compared = runCorpusEntry(seedInstrumentSfzPath(), "sfz", 0, 0, seedMidiPath(),
                                                 kFrames, ref, CorpusThresholds{});
     INFO(compared.error);
     REQUIRE(compared.refCompared);
@@ -64,7 +64,7 @@ TEST_CASE("corpus entry: capture then re-render passes thresholds", "[corpus]")
     CHECK(compared.referenceFrames == kFrames);
 
     // A behavioral change must fail: diff against a wrong-length reference.
-    CorpusEntryResult mismatched = runCorpusEntry(seedInstrumentSfzPath(), seedMidiPath(),
+    CorpusEntryResult mismatched = runCorpusEntry(seedInstrumentSfzPath(), "sfz", 0, 0, seedMidiPath(),
                                                   kFrames / 2, ref, CorpusThresholds{});
     CHECK_FALSE(mismatched.passed);
 
@@ -74,7 +74,7 @@ TEST_CASE("corpus entry: capture then re-render passes thresholds", "[corpus]")
 
 TEST_CASE("corpus entry: missing sfz reports load failure", "[corpus]")
 {
-    CorpusEntryResult r = runCorpusEntry("does_not_exist.sfz", seedMidiPath(), 48000, {},
+    CorpusEntryResult r = runCorpusEntry("does_not_exist.sfz", "sfz", 0, 0, seedMidiPath(), 48000, {},
                                          CorpusThresholds{});
     CHECK_FALSE(r.loaded);
     CHECK_FALSE(r.passed);

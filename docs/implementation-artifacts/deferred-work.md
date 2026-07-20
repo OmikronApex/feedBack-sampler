@@ -43,3 +43,22 @@
 - `tests/render/wav_io.cpp` test-fixture writer doesn't assert equal channel-array lengths (OOB read) or guard NaN samples bypassing the int16 clamp (UB on cast) — confined to internal test-fixture generation with controlled inputs, not shipped/production code [tests/render/wav_io.cpp:33-58,96-101].
 - No structured field records *why* a per-entry threshold override was applied (Dev Notes ask for a recorded rationale); currently moot since none of the 3 corpus entries use an override [corpus/manifest.json schema].
 - Corpus manifest has no explicit numeric/ordinal `weight` field (Task 1 literally asks for "weight/rationale ('weighted by real-library usage')"); decided during this review that the free-text `rationale` field satisfies intent at the current 3-entry scale, since a `weight` field with no consumer in `run_corpus.py`'s aggregation would be speculative schema. Revisit once the corpus grows large enough (Epic 2/4) that per-format aggregation needs real weighting [corpus/manifest.json schema].
+
+## Deferred from: story 2-1-sf2-structure-lowers-to-the-canonical-model (2026-07-19)
+
+- **Engine bind seam NOT replaced in 2.1 (decision):** SF2 lowering, goldens, preset enumeration, pool-side embedded decoding and the fuzzer are all complete at the model/pool level, but `model_to_sfz.cpp` still cannot express `sf2://` sample references — an SF2 model loads and validates but will not bind/render through the engine yet. The seam replacement (direct sfizz region construction) is the FIRST task of Story 2.2, which hard-requires it anyway (mod-matrix curves are inexpressible in SFZ text). Story 2.5's corpus rendering depends on 2.2 completing this.
+- **sm24 (24-bit sample extension) ignored:** the pool's `readSf2Sample` decodes the 16-bit smpl chunk only; sm24 refinement bytes are skipped in v0.
+- **SF2 stereo v0 choice:** linked left/right mono samples lower as two hard-panned regions (generator pan summed then clamped); a true stereo voice is future work.
+
+## Deferred from: story 2-2-sf2-modulators-through-the-unified-mod-matrix (2026-07-19)
+
+- **RPN-changed pitch-bend range not executed:** sfizz 1.2.3 has no RPN support, so a runtime RPN 0 change does not alter the bend range (the SF2 default 2 semitones from bendUp/DownCents is honored). Oracle bend tests stay inside the default range.
+- **Secondary amount sources dropped at bind:** modulators with amountSource != None (e.g. mod-wheel-scales-vibrato) lower faithfully into the model but the engine drops them with engine.mod_amount_source_dropped — sfizz has no per-connection two-controller multiply.
+- **Vibrato-LFO default modulators are a tracked gap:** SoundFont 8.4.3/8.4.4 (pressure/CC1 -> vibrato LFO pitch) target an LFO the model cannot express; lowered as sf2.modulator_unsupported warnings.
+- **FilterCutoff/ReverbSend/ChorusSend matrix targets are reserved:** they lower and serialize but the engine drops them with engine.mod_target_unsupported until it grows a filter/effect sends.
+- **Embedded-sample memory triple-residency at load:** pool float32 + base64 text (transient) + sfizz FilePool copy. Bounded by v0 all-RAM policy; Epic 5 unifies residency.
+
+## Deferred from: story 2-3-sf3-plays-identically-to-sf2 (2026-07-19)
+
+- **Externally-produced SF3 not yet in the test set:** our fixtures are encoded by our own generator (ffmpeg/libvorbis), so encoder/decoder agreement is partially circular. A MuseScore-converted real SF3 (compatible license) belongs in Story 2.5's corpus slice per the story dev note.
+- **SF3 streaming interaction:** compressed samples decode whole at acquire(); Epic 5's streaming pool will likely keep decode-at-load for Vorbis (seek-decode is impractical) — revisit the residency budget there.

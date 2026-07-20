@@ -97,11 +97,15 @@ void validateRegion(const Region& region, const std::unordered_set<std::string>&
         if (!isFinite(mod.depth)) {
             addError(out, "region.mod_depth_not_finite", "ModMatrixEntry depth must be finite");
         }
-        if (!inRange(mod.curve, 0.0f, 1.0f)) {
-            addError(out, "region.mod_curve_out_of_range",
-                "ModMatrixEntry curve must be finite and within [0, 1]");
-        }
         if (mod.source.kind == ModSourceKind::Cc && mod.source.ccNumber > 127) {
+            addError(out, "region.mod_cc_out_of_midi_range",
+                "ModSource ccNumber must be within the MIDI range [0, 127]");
+        }
+        if (mod.source.kind == ModSourceKind::None) {
+            addError(out, "region.mod_source_none",
+                "ModMatrixEntry primary source kind must not be None");
+        }
+        if (mod.amountSource.kind == ModSourceKind::Cc && mod.amountSource.ccNumber > 127) {
             addError(out, "region.mod_cc_out_of_midi_range",
                 "ModSource ccNumber must be within the MIDI range [0, 127]");
         }
